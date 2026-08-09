@@ -1,0 +1,29 @@
+<td>
+  <input type="date" class="mono" [ngModel]="draftDate()" (ngModelChange)="draftDate.set($event)" />
+</td>
+<td>
+  <select [ngModel]="draftCategoryId()" (ngModelChange)="setDraftCategoryId($event)">
+    @for (cat of categories(); track cat.id) {
+      <option [value]="cat.id">{{ cat.name }}</option>
+    }
+  </select>
+</td>
+<td>
+  <input class="desc-input" [ngModel]="draftDescription()" (ngModelChange)="draftDescription.set($event)" />
+</td>
+<td class="amount-cell">
+  <input class="amount-input mono" [ngModel]="draftAmount()" (ngModelChange)="draftAmount.set($event)" />
+  <select [ngModel]="draftCurrency()" (ngModelChange)="setDraftCurrency($event)">
+    <option value="ARS">ARS</option>
+    <option value="USD">USD</option>
+  </select>
+</td>
+<td>
+  @if (draftCurrency() === 'USD') {
+    <input class="rate-input mono" placeholder="cotiz." [ngModel]="draftRate()" (ngModelChange)="draftRate.set($event)" />
+  }
+</td>
+<td class="actions-cell">
+  <button type="button" class="btn-save" (click)="save()">Guardar</button>
+  <button type="button" class="btn-cancel" (click)="cancelled.emit()">Cancelar</button>
+</td>

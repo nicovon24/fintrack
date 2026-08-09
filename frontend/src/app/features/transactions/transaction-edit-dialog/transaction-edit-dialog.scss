@@ -1,0 +1,64 @@
+:host {
+  border-bottom: 1px solid var(--divider);
+}
+
+td {
+  padding: 8px 12px;
+}
+
+input,
+select {
+  padding: 5px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 12.5px;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.desc-input {
+  width: 100%;
+}
+
+.amount-cell {
+  text-align: right;
+}
+
+.amount-input {
+  width: 90px;
+  text-align: right;
+}
+
+.rate-input {
+  width: 70px;
+}
+
+.actions-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.btn-save,
+.btn-cancel {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.btn-save {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.btn-cancel {
+  border: 1px solid var(--divider);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+}

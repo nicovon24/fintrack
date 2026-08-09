@@ -1,0 +1,44 @@
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.name-input {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.type-select {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.btn-save,
+.btn-cancel {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-save {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.btn-cancel {
+  border: 1px solid var(--divider);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+}

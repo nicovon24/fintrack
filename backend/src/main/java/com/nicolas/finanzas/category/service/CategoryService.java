@@ -9,6 +9,7 @@ import com.nicolas.finanzas.category.dto.CategoryRequest;
 import com.nicolas.finanzas.category.dto.CategoryResponse;
 import com.nicolas.finanzas.category.model.Category;
 import com.nicolas.finanzas.category.repository.CategoryRepository;
+import com.nicolas.finanzas.exception.DuplicateResourceException;
 import com.nicolas.finanzas.exception.ResourceNotFoundException;
 import com.nicolas.finanzas.transaction.model.TransactionType;
 
@@ -31,6 +32,7 @@ public class CategoryService {
     }
 
     public CategoryResponse create(CategoryRequest request) {
+        requireNoDuplicate(request.name(), request.type(), null);
         Category category = new Category();
         category.setName(request.name());
         category.setType(request.type());
@@ -39,9 +41,19 @@ public class CategoryService {
 
     public CategoryResponse update(Long id, CategoryRequest request) {
         Category category = getCategoryOrThrow(id);
+        requireNoDuplicate(request.name(), request.type(), id);
         category.setName(request.name());
         category.setType(request.type());
         return CategoryResponse.from(categoryRepository.save(category));
+    }
+
+    private void requireNoDuplicate(String name, TransactionType type, Long excludeId) {
+        categoryRepository.findByNameIgnoreCaseAndType(name, type)
+                .filter(existing -> !existing.getId().equals(excludeId))
+                .ifPresent(existing -> {
+                    throw new DuplicateResourceException(
+                            "Ya existe una categoria '" + existing.getName() + "' de tipo " + type);
+                });
     }
 
     public void delete(Long id) {

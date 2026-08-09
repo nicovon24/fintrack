@@ -1,5 +1,6 @@
 package com.nicolas.finanzas.transaction.controller;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -37,14 +38,18 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping
-    @Operation(summary = "Listar transacciones, con filtros opcionales por tipo, categoria y mes (yyyy-MM)")
+    @Operation(summary = "Listar transacciones, con filtros opcionales por tipo, categoria, mes (yyyy-MM) o rango de fechas (from/to)")
     public List<TransactionResponse> findAll(
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) Long categoryId,
             @Parameter(example = "2026-08")
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+            @Parameter(example = "2026-01-01")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @Parameter(example = "2026-12-31")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
-        return transactionService.findAll(type, categoryId, month);
+        return transactionService.findAll(type, categoryId, month, from, to);
     }
 
     @GetMapping("/{id}")
@@ -73,11 +78,15 @@ public class TransactionController {
     }
 
     @GetMapping("/summary")
-    @Operation(summary = "Resumen de ingresos, gastos y totales por categoria para un mes (yyyy-MM)")
+    @Operation(summary = "Resumen de ingresos, gastos y totales por categoria para un mes (yyyy-MM) o un rango de fechas (from/to)")
     public TransactionSummaryResponse summary(
-            @Parameter(example = "2026-08", required = true)
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
+            @Parameter(example = "2026-08")
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+            @Parameter(example = "2026-01-01")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @Parameter(example = "2026-12-31")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
-        return transactionService.summary(month);
+        return transactionService.summary(month, from, to);
     }
 }

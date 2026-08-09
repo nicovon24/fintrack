@@ -1,0 +1,36 @@
+<div class="stepper">
+  @for (label of stepLabels; track label; let i = $index) {
+    <div class="step" [class.last]="i === stepLabels.length - 1">
+      <div class="step-dot" [class.active]="step() === i + 1" [class.done]="step() > i + 1">{{ i + 1 }}</div>
+      <span class="step-label">{{ label }}</span>
+      @if (i < stepLabels.length - 1) {
+        <div class="step-line" [class.done]="step() > i + 1"></div>
+      }
+    </div>
+  }
+</div>
+
+@if (errorMessage(); as msg) {
+  <div class="error-banner">⚠ {{ msg }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-card">Analizando archivo…</div>
+} @else {
+  @switch (step()) {
+    @case (1) {
+      <app-upload-step (fileSelected)="onFileSelected($event)" />
+    }
+    @case (2) {
+      <app-preview-step
+        [preview]="preview()"
+        [existingCategoryNames]="existingCategoryNames()"
+        (rowsConfirmed)="onRowsConfirmed($event)"
+        (backRequested)="backToUpload()"
+      />
+    }
+    @case (3) {
+      <app-confirm-step [result]="confirmResult()" (goToDashboard)="goToDashboard()" />
+    }
+  }
+}

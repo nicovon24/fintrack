@@ -19,13 +19,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/transactions/import")
 @RequiredArgsConstructor
-@Tag(name = "Importacion", description = "Import masivo de transacciones desde un archivo Excel (.xlsx)")
+@Tag(name = "Importacion", description = "Import masivo de transacciones desde un archivo .xlsx, .csv o .txt")
 public class ImportController {
 
     private final ImportService importService;
 
     @PostMapping(value = "/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Parsea y valida un archivo .xlsx sin persistir nada")
+    @Operation(summary = "Parsea y valida un archivo .xlsx, .csv o .txt sin persistir nada")
     public ImportPreviewResponse preview(@RequestParam("file") MultipartFile file) {
         return importService.preview(file);
     }

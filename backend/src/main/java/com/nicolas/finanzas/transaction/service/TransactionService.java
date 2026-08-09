@@ -37,10 +37,11 @@ public class TransactionService {
     private final CategoryService categoryService;
     private final CurrentUserProvider currentUserProvider;
 
-    public List<TransactionResponse> findAll(TransactionType type, Long categoryId, YearMonth month) {
+    public List<TransactionResponse> findAll(TransactionType type, Long categoryId, YearMonth month, LocalDate from, LocalDate to) {
         User user = currentUserProvider.getCurrentUser();
-        List<Transaction> transactions = month != null
-                ? transactionRepository.findByUserAndDateBetween(user, month.atDay(1), month.atEndOfMonth())
+        LocalDate[] range = resolveRange(month, from, to);
+        List<Transaction> transactions = range != null
+                ? transactionRepository.findByUserAndDateBetween(user, range[0], range[1])
                 : transactionRepository.findByUser(user);
 
         return transactions.stream()
@@ -74,12 +75,14 @@ public class TransactionService {
         transactionRepository.delete(transaction);
     }
 
-    public TransactionSummaryResponse summary(YearMonth month) {
+    public TransactionSummaryResponse summary(YearMonth month, LocalDate from, LocalDate to) {
         User user = currentUserProvider.getCurrentUser();
-        LocalDate start = month.atDay(1);
-        LocalDate end = month.atEndOfMonth();
+        LocalDate[] range = resolveRange(month, from, to);
+        if (range == null) {
+            throw new InvalidTransactionException("Debe indicar month, o from y to");
+        }
 
-        List<Transaction> transactions = transactionRepository.findByUserAndDateBetween(user, start, end);
+        List<Transaction> transactions = transactionRepository.findByUserAndDateBetween(user, range[0], range[1]);
 
         List<CurrencyTotal> byCurrency = transactions.stream()
                 .map(Transaction::getCurrency)
@@ -109,6 +112,19 @@ public class TransactionService {
                 .toList();
 
         return new TransactionSummaryResponse(byCurrency, combinedArs, byCategory);
+    }
+
+    private LocalDate[] resolveRange(YearMonth month, LocalDate from, LocalDate to) {
+        if ((from == null) != (to == null)) {
+            throw new InvalidTransactionException("Debe indicar from y to juntos");
+        }
+        if (from != null) {
+            return new LocalDate[] { from, to };
+        }
+        if (month != null) {
+            return new LocalDate[] { month.atDay(1), month.atEndOfMonth() };
+        }
+        return null;
     }
 
     private BigDecimal sumByType(List<Transaction> transactions, TransactionType type) {

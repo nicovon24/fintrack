@@ -31,7 +31,7 @@ Does not include (yet):
 - every repository query is scoped by `user` (`findByUserAndDateBetween`, `findByUser`, `findByIdAndUser`); `TransactionService` gets the current user from the security context via `CurrentUserProvider` (never trusts a `userId` passed by the client)
 
 **Category** (unchanged data model)
-- Stays global/shared — every user picks from the same category list. Writes require `ADMIN` (enforced in `SecurityConfig`, not in `CategoryController` itself — the controller doesn't know about roles). This was a deliberate choice over per-user categories, to keep the "max 10 categories" import constraint simple and shared rather than duplicated per user, and to keep the list curated instead of open to accidental duplicates/typos from every user.
+- Stays global/shared — every user picks from the same category list. Writes require `ADMIN` (enforced in `SecurityConfig`, not in `CategoryController` itself — the controller doesn't know about roles). This was a deliberate choice over per-user categories, to keep the "max 20 categories" import constraint simple and shared rather than duplicated per user, and to keep the list curated instead of open to accidental duplicates/typos from every user.
 
 ## Endpoints
 

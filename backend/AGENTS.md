@@ -75,4 +75,4 @@ docker compose up -d
 2. Keep the architecture simple. Don't over-design for hypothetical future cases.
 3. Follow each layer's rules in `.agentic-rules/`.
 4. Before considering a task done: verify it compiles (`./mvnw clean compile`) and tests pass (`./mvnw test`).
-5. Every non-trivial new feature should have its spec in `docs/specs/` before being implemented.
+5. Every non-trivial new feature should have its spec in root `../docs/specs/` before being implemented.

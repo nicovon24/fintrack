@@ -1,0 +1,13 @@
+.badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--divider);
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+
+  &.usd {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}

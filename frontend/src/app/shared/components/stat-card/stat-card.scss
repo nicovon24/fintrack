@@ -1,0 +1,36 @@
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.value {
+  font-size: 21px;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+
+  &.tone-default {
+    color: var(--text-primary);
+  }
+  &.tone-income {
+    color: var(--income);
+  }
+  &.tone-expense {
+    color: var(--expense);
+  }
+  &.tone-warn {
+    color: var(--warn);
+  }
+}

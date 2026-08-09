@@ -1,0 +1,65 @@
+<div class="filters-row">
+  <select [ngModel]="typeFilter()" (ngModelChange)="setTypeFilter($event)">
+    <option value="todos">Todos los tipos</option>
+    <option value="INCOME">Ingresos</option>
+    <option value="EXPENSE">Gastos</option>
+  </select>
+  <select [ngModel]="categoryFilter()" (ngModelChange)="setCategoryFilter($event)">
+    <option value="todas">Todas las categorías</option>
+    @for (cat of categories(); track cat.id) {
+      <option [value]="cat.id">{{ cat.name }}</option>
+    }
+  </select>
+  <select [ngModel]="currencyFilter()" (ngModelChange)="setCurrencyFilter($event)">
+    <option value="todas">ARS + USD</option>
+    <option value="ARS">Solo ARS</option>
+    <option value="USD">Solo USD</option>
+  </select>
+  <span class="count-label">{{ filteredTransactions().length }} movimientos</span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Categoría</th>
+        <th>Descripción</th>
+        <th class="amount-col">Monto</th>
+        <th>Cotización</th>
+        <th class="actions-col">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (tx of filteredTransactions(); track tx.id) {
+        @if (editingId() === tx.id) {
+          <tr app-transaction-edit-dialog [transaction]="tx" [categories]="categories()" (saved)="saveEdit(tx.id, $event)" (cancelled)="cancelEdit()"></tr>
+        } @else {
+          <tr>
+            <td class="mono muted">{{ tx.date | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ tx.category.name }}</td>
+            <td>{{ tx.description }}</td>
+            <td class="amount-col mono">
+              <span [class.income]="tx.type === 'INCOME'" [class.expense]="tx.type === 'EXPENSE'">
+                {{ tx.type === 'INCOME' ? '+' : '-' }} {{ tx.amount | currencyFormat: tx.currency }}
+              </span>
+              <app-currency-badge [currency]="tx.currency" />
+            </td>
+            <td class="mono muted small">{{ tx.exchangeRate ?? '—' }}</td>
+            <td class="actions-col">
+              @if (deleteConfirmId() === tx.id) {
+                <app-confirm-dialog message="¿Borrar?" (confirmed)="confirmDelete(tx.id)" (cancelled)="cancelDelete()" />
+              } @else {
+                <button type="button" class="btn-edit" (click)="startEdit(tx.id)">Editar</button>
+                <button type="button" class="btn-delete" (click)="requestDelete(tx.id)">Borrar</button>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+  @if (!loading() && filteredTransactions().length === 0) {
+    <div class="empty-state">No hay transacciones que coincidan con estos filtros.</div>
+  }
+</div>

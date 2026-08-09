@@ -1,0 +1,13 @@
+<div class="edit-row">
+  <input
+    class="name-input"
+    [ngModel]="draftName()"
+    (ngModelChange)="setDraftName($event)"
+  />
+  <select class="type-select" [ngModel]="draftType()" (ngModelChange)="setDraftType($event)">
+    <option value="INCOME">Ingreso</option>
+    <option value="EXPENSE">Gasto</option>
+  </select>
+  <button type="button" class="btn-save" (click)="save()">Guardar</button>
+  <button type="button" class="btn-cancel" (click)="cancelled.emit()">Cancelar</button>
+</div>

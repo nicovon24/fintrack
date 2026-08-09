@@ -1,0 +1,15 @@
+<div class="upload-card">
+  <label class="dropzone" (drop)="onDrop($event)" (dragover)="onDragOver($event)">
+    <div class="dropzone-title">Arrastrá tu archivo .xlsx, .csv o .txt acá</div>
+    <div class="dropzone-hint">o hacé click para elegirlo desde tu computadora</div>
+    <input type="file" accept=".xlsx,.xls,.csv,.txt" class="file-input" (change)="onFileChange($event)" />
+    <span class="pick-btn">Elegir archivo</span>
+    @if (pickedFile(); as file) {
+      <div class="picked-name mono">📎 {{ file.name }}</div>
+    }
+  </label>
+  <div class="upload-footer">
+    <a href="#" class="template-link">↓ Descargar plantilla de ejemplo (.xlsx)</a>
+    <button type="button" class="btn-continue" [disabled]="!pickedFile()" (click)="continue()">Continuar</button>
+  </div>
+</div>

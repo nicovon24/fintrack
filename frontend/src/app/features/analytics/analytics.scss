@@ -1,0 +1,256 @@
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.income {
+  color: var(--income);
+}
+
+.expense {
+  color: var(--expense);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pill {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  cursor: pointer;
+  border: 1px solid var(--divider);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+}
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 18px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.chart-card {
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 20px;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 130px;
+}
+
+.bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar-pair {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+.bar {
+  width: 8px;
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.income-bar {
+  background: var(--income);
+}
+
+.expense-bar {
+  background: var(--expense);
+}
+
+.bar-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 5px;
+}
+
+.income-dot {
+  background: var(--income);
+}
+
+.expense-dot {
+  background: var(--expense);
+}
+
+.gauge-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.gauge {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gauge-inner {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-value {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.gauge-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.gauge-text {
+  flex: 1;
+  min-width: 160px;
+}
+
+.gauge-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.gauge-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.top-cats-card {
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 20px;
+}
+
+.top-cats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.top-cat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--divider);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--expense);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  padding: 20px 0;
+}

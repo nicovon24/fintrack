@@ -1,0 +1,67 @@
+<div class="categories-page">
+  <div class="list-panel">
+    @for (cat of categoriesEnriched(); track cat.id) {
+      <div class="cat-row">
+        @if (editingId() !== cat.id) {
+          <div class="row-view">
+            <span class="avatar">{{ cat.initial }}</span>
+            <div class="row-main">
+              <div class="row-name">{{ cat.name }}</div>
+              <div class="row-meta">{{ cat.txCount }} transacciones</div>
+            </div>
+            <span class="type-badge" [class.income]="cat.type === 'INCOME'">
+              {{ cat.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+            </span>
+            @if (authService.isAdmin()) {
+              <button type="button" class="btn-edit" (click)="startEdit(cat.id)">Editar</button>
+              @if (deleteConfirmId() === cat.id) {
+                <app-confirm-dialog
+                  message="¿Borrar?"
+                  (confirmed)="confirmDelete(cat.id)"
+                  (cancelled)="cancelDelete()"
+                />
+              } @else {
+                <button type="button" class="btn-delete" (click)="requestDelete(cat.id)">Borrar</button>
+              }
+            }
+          </div>
+          @if (deleteErrorId() === cat.id) {
+            <div class="delete-error">
+              No se puede borrar: tiene {{ cat.txCount }} transacciones asociadas. Reasigná o borrá esas
+              transacciones primero.
+            </div>
+          }
+        } @else {
+          <app-category-edit-dialog
+            [category]="cat"
+            (saved)="saveEdit(cat.id, $event)"
+            (cancelled)="cancelEdit()"
+          />
+        }
+      </div>
+    }
+    @if (!loading() && categoriesEnriched().length === 0) {
+      <div class="empty-state">Todavía no hay categorías.</div>
+    }
+  </div>
+
+  @if (authService.isAdmin()) {
+    <div class="new-cat-panel">
+      <div class="panel-title">Nueva categoría</div>
+      <div class="panel-form">
+        <input
+          placeholder="Nombre"
+          [ngModel]="newCatName()"
+          (ngModelChange)="setNewCatName($event)"
+        />
+        <select [ngModel]="newCatType()" (ngModelChange)="setNewCatType($event)">
+          <option value="INCOME">Ingreso</option>
+          <option value="EXPENSE">Gasto</option>
+        </select>
+        <button type="button" class="btn-add" [disabled]="!newCatName().trim() || saving()" (click)="addCategory()">
+          + Crear categoría
+        </button>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,32 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.confirm-message {
+  font-size: 12px;
+  color: var(--expense);
+  margin-right: 6px;
+}
+
+.btn-yes,
+.btn-no {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-yes {
+  border: 1px solid var(--expense-border);
+  background: var(--expense-bg);
+  color: var(--expense);
+}
+
+.btn-no {
+  border: 1px solid var(--divider);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+}

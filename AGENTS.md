@@ -7,9 +7,10 @@ Personal finance app: income/expense management (with excel import planned) and 
 ## Monorepo Structure
 
 - `backend/` — Java 25 + Spring Boot 4 + PostgreSQL (Maven)
-- `frontend/` — Angular (version TBD) — not started yet
+- `frontend/` — Angular 22, standalone components + signals (npm)
+- `docs/` (root) — all specs and docs live here, for both backend and frontend (`docs/specs/`, plus reference docs like `databases.md`)
 
-Each subfolder has its own `AGENTS.md` and `.agentic-rules/` with the conventions specific to that part of the stack.
+Each subfolder has its own `AGENTS.md` and `.agentic-rules/` with the conventions specific to that part of the stack. Docs, however, are centralized in root `docs/`, not split per subfolder.
 
 **Token optimization**: each subfolder's `AGENTS.md` has a "which rules to read for which task" table. Read only what's relevant to what you're doing, not the whole rule set every time.
 
@@ -29,6 +30,6 @@ Each subfolder has its own `AGENTS.md` and `.agentic-rules/` with the convention
 
 ## General Rules
 
-1. Every non-trivial new feature starts with a short spec in `backend/docs/specs/` (or `frontend/docs/specs/` once it exists) before being implemented.
+1. Every non-trivial new feature starts with a short spec in root `docs/specs/` before being implemented (use `docs/specs/_TEMPLATE.md`, prefix filename with the next number, e.g. `04-...`).
 2. Always follow the `.agentic-rules/` of the subfolder you're touching.
 3. Don't mix conventions between backend and frontend — each has its own stack and rules.

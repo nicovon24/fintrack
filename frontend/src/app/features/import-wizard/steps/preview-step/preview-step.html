@@ -1,0 +1,77 @@
+@if (preview(); as p) {
+  <div class="stat-tiles">
+    <div class="tile">
+      <div class="tile-label">Filas OK</div>
+      <div class="tile-value mono income">{{ p.totalRows - p.errors.length }}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Filas con error</div>
+      <div class="tile-value mono" [class.expense]="p.errors.length > 0">{{ p.errors.length }}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Categorías nuevas</div>
+      <div class="tile-value mono">{{ newCategories().length }}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Categorías distintas</div>
+      <div class="tile-value mono">{{ p.distinctCategories.length }}</div>
+    </div>
+  </div>
+
+  <div class="rows-card">
+    <div class="rows-title">Filas detectadas</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Categoria</th>
+          <th>Concepto</th>
+          <th class="amount-col">Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of p.rows; track $index) {
+          <tr>
+            <td class="mono muted">{{ row.date }}</td>
+            <td [class.income]="row.type === 'INCOME'" [class.expense]="row.type === 'EXPENSE'">
+              {{ row.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+            </td>
+            <td>{{ row.category }}</td>
+            <td>{{ row.description }}</td>
+            <td class="amount-col mono">{{ row.amount }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (hasErrors()) {
+    <div class="errors-card">
+      <div class="errors-title">Errores por fila — corregí el excel y volvé a subirlo</div>
+      @for (err of p.errors; track $index) {
+        <div class="error-line">Fila {{ err.rowNumber }}: {{ err.message }}</div>
+      }
+    </div>
+  }
+
+  @if (newCategories().length > 0) {
+    <div class="new-cats-card">
+      <div class="new-cats-title">Categorías nuevas que se van a crear</div>
+      <div class="chips">
+        @for (name of newCategories(); track name) {
+          <span class="chip">+ {{ name }}</span>
+        }
+      </div>
+    </div>
+  }
+
+  @if (hasErrors()) {
+    <div class="blocked-hint">"Confirmar" está deshabilitado hasta que subas un archivo sin errores.</div>
+  }
+
+  <div class="actions-row">
+    <button type="button" class="btn-back" (click)="backRequested.emit()">← Volver</button>
+    <button type="button" class="btn-confirm" [disabled]="hasErrors()" (click)="confirm()">Confirmar importación</button>
+  </div>
+}

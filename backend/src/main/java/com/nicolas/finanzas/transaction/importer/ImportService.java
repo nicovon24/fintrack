@@ -47,7 +47,7 @@ public class ImportService {
     private static final String MONTH_HEADER = "Mes";
     private static final String CURRENCY_HEADER = "Moneda";
     private static final String EXCHANGE_RATE_HEADER = "Cotizacion";
-    private static final int MAX_DISTINCT_CATEGORIES = 10;
+    private static final int MAX_DISTINCT_CATEGORIES = 20;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final CategoryService categoryService;
@@ -107,6 +107,17 @@ public class ImportService {
     }
 
     private ParsedImportResult parse(MultipartFile file) {
+        String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
+            return parseExcel(file);
+        }
+        if (filename.endsWith(".csv") || filename.endsWith(".txt")) {
+            return parseDelimited(file);
+        }
+        throw new ImportValidationException(List.of("Formato de archivo no soportado. Subi un .xlsx, .csv o .txt"));
+    }
+
+    private ParsedImportResult parseExcel(MultipartFile file) {
         List<ImportRow> rows = new ArrayList<>();
         List<ImportRowError> errors = new ArrayList<>();
         Set<String> distinctCategories = new LinkedHashSet<>();
@@ -114,7 +125,14 @@ public class ImportService {
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             Row headerRow = sheet.getRow(0);
-            Map<String, Integer> headerIndex = validateHeaders(headerRow);
+            if (headerRow == null) {
+                throw new ImportValidationException(List.of("El archivo no tiene fila de encabezados"));
+            }
+            List<String> headerCells = new ArrayList<>();
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                headerCells.add(formatCell(headerRow.getCell(i)));
+            }
+            Map<String, Integer> headerIndex = validateHeaders(headerCells);
             boolean hasCurrency = headerIndex.containsKey(CURRENCY_HEADER);
             boolean hasExchangeRate = headerIndex.containsKey(EXCHANGE_RATE_HEADER);
 
@@ -144,6 +162,203 @@ public class ImportService {
         }
 
         return new ParsedImportResult(rows, errors, new ArrayList<>(distinctCategories));
+    }
+
+    private ParsedImportResult parseDelimited(MultipartFile file) {
+        List<ImportRow> rows = new ArrayList<>();
+        List<ImportRowError> errors = new ArrayList<>();
+        Set<String> distinctCategories = new LinkedHashSet<>();
+
+        List<String> lines;
+        try {
+            lines = readLines(file);
+        } catch (IOException e) {
+            throw new ImportValidationException(List.of("No se pudo leer el archivo: " + e.getMessage()));
+        }
+
+        int headerLineIndex = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            if (!lines.get(i).isBlank()) {
+                headerLineIndex = i;
+                break;
+            }
+        }
+        if (headerLineIndex == -1) {
+            throw new ImportValidationException(List.of("El archivo no tiene fila de encabezados"));
+        }
+
+        char delimiter = detectDelimiter(lines.get(headerLineIndex));
+
+        List<String> headerCells = splitLine(lines.get(headerLineIndex), delimiter);
+        Map<String, Integer> headerIndex = validateHeaders(headerCells);
+        boolean hasCurrency = headerIndex.containsKey(CURRENCY_HEADER);
+        boolean hasExchangeRate = headerIndex.containsKey(EXCHANGE_RATE_HEADER);
+
+        for (int i = headerLineIndex + 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (line.isBlank()) {
+                continue;
+            }
+            List<String> cells = splitLine(line, delimiter);
+            if (isRowEmpty(cells)) {
+                continue;
+            }
+
+            int lineNumber = i + 1;
+            try {
+                ImportRow parsedRow = parseTextRow(cells, headerIndex, hasCurrency, hasExchangeRate);
+                validateBusinessRules(parsedRow);
+                rows.add(parsedRow);
+                distinctCategories.add(parsedRow.category());
+            } catch (RowParseException e) {
+                errors.add(new ImportRowError(lineNumber, e.getMessage()));
+            }
+        }
+
+        validateCategoryCap(distinctCategories);
+        if (errors.isEmpty()) {
+            validateCategoriesExist(rows);
+        }
+
+        return new ParsedImportResult(rows, errors, new ArrayList<>(distinctCategories));
+    }
+
+    private List<String> readLines(MultipartFile file) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (var reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(file.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (first) {
+                    if (!line.isEmpty() && line.charAt(0) == '﻿') {
+                        line = line.substring(1);
+                    }
+                    first = false;
+                }
+                lines.add(line);
+            }
+        }
+        return lines;
+    }
+
+    private char detectDelimiter(String headerLine) {
+        if (headerLine.contains("\t")) {
+            return '\t';
+        }
+        if (headerLine.contains(";")) {
+            return ';';
+        }
+        return ',';
+    }
+
+    private List<String> splitLine(String line, char delimiter) {
+        List<String> cells = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (inQuotes) {
+                if (c == '"') {
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        current.append('"');
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    current.append(c);
+                }
+            } else if (c == '"' && current.isEmpty()) {
+                inQuotes = true;
+            } else if (c == delimiter) {
+                cells.add(current.toString().trim());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        cells.add(current.toString().trim());
+        return cells;
+    }
+
+    private boolean isRowEmpty(List<String> cells) {
+        return cells.stream().allMatch(String::isBlank);
+    }
+
+    private ImportRow parseTextRow(
+            List<String> cells, Map<String, Integer> headerIndex, boolean hasCurrency, boolean hasExchangeRate) {
+        String fechaStr = textCellValue(cells, headerIndex.get("Fecha"));
+        String tipoStr = textCellValue(cells, headerIndex.get("Tipo"));
+        String categoria = textCellValue(cells, headerIndex.get("Categoria"));
+        String concepto = textCellValue(cells, headerIndex.get("Concepto"));
+        String montoStr = textCellValue(cells, headerIndex.get("Monto"));
+
+        LocalDate fecha = parseFecha(fechaStr);
+        TransactionType tipo = parseTipo(tipoStr);
+        BigDecimal monto = parseMonto(montoStr);
+
+        Currency currency = Currency.ARS;
+        if (hasCurrency) {
+            String monedaStr = textCellValue(cells, headerIndex.get(CURRENCY_HEADER));
+            if (monedaStr != null && !monedaStr.isBlank()) {
+                currency = parseMoneda(monedaStr);
+            }
+        }
+
+        BigDecimal exchangeRate = null;
+        if (hasExchangeRate) {
+            exchangeRate = parseOptionalDecimal(textCellValue(cells, headerIndex.get(EXCHANGE_RATE_HEADER)));
+        }
+
+        return new ImportRow(fecha, tipo, categoria == null ? null : categoria.trim(), concepto, monto, currency, exchangeRate);
+    }
+
+    private String textCellValue(List<String> cells, Integer columnIndex) {
+        if (columnIndex == null || columnIndex >= cells.size()) {
+            return null;
+        }
+        String value = cells.get(columnIndex);
+        return value == null ? null : value.trim();
+    }
+
+    private BigDecimal parseMonto(String raw) {
+        BigDecimal value = parseOptionalDecimal(raw);
+        if (value == null) {
+            throw new RowParseException("El monto es obligatorio");
+        }
+        if (value.signum() <= 0) {
+            throw new RowParseException("Monto invalido: debe ser positivo");
+        }
+        return value;
+    }
+
+    private BigDecimal parseOptionalDecimal(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String normalized = normalizeDecimalSeparators(raw.trim());
+        try {
+            return new BigDecimal(normalized);
+        } catch (NumberFormatException e) {
+            throw new RowParseException("Valor numerico invalido: '" + raw + "'");
+        }
+    }
+
+    // Detecta el separador decimal por el propio valor (no por el delimitador del archivo):
+    // si aparecen coma y punto, el ultimo de los dos es el decimal y el otro es separador de miles.
+    private String normalizeDecimalSeparators(String value) {
+        int lastComma = value.lastIndexOf(',');
+        int lastDot = value.lastIndexOf('.');
+        if (lastComma >= 0 && lastDot >= 0) {
+            return lastComma > lastDot
+                    ? value.replace(".", "").replace(',', '.')
+                    : value.replace(",", "");
+        }
+        if (lastComma >= 0) {
+            return value.replace(',', '.');
+        }
+        return value;
     }
 
     private void validateCategoryCap(Set<String> distinctCategories) {
@@ -196,14 +411,10 @@ public class ImportService {
         }
     }
 
-    private Map<String, Integer> validateHeaders(Row headerRow) {
-        if (headerRow == null) {
-            throw new ImportValidationException(List.of("El archivo no tiene fila de encabezados"));
-        }
-
+    private Map<String, Integer> validateHeaders(List<String> headerCells) {
         Map<String, Integer> index = new LinkedHashMap<>();
-        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-            String header = formatCell(headerRow.getCell(i)).trim();
+        for (int i = 0; i < headerCells.size(); i++) {
+            String header = headerCells.get(i).trim();
             if (!header.isEmpty()) {
                 index.put(header, i);
             }
@@ -324,15 +535,7 @@ public class ImportService {
         if (cell.getCellType() == CellType.NUMERIC) {
             return BigDecimal.valueOf(cell.getNumericCellValue());
         }
-        String raw = formatCell(cell).trim();
-        if (raw.isEmpty()) {
-            return null;
-        }
-        try {
-            return new BigDecimal(raw.replace(",", "."));
-        } catch (NumberFormatException e) {
-            throw new RowParseException("Valor numerico invalido: '" + raw + "'");
-        }
+        return parseOptionalDecimal(formatCell(cell).trim());
     }
 
     private String cellValue(Row row, Integer columnIndex) {

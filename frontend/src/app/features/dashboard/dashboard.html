@@ -1,0 +1,214 @@
+<div class="dash-header">
+  <div class="filter-controls">
+    <div class="mode-toggle">
+      <button type="button" class="pill" [class.active]="filterMode() === 'month'" (click)="setFilterMode('month')">Mes</button>
+      <button type="button" class="pill" [class.active]="filterMode() === 'year'" (click)="setFilterMode('year')">Año</button>
+      <button type="button" class="pill" [class.active]="filterMode() === 'range'" (click)="setFilterMode('range')">Rango</button>
+    </div>
+
+    @if (filterMode() === 'month') {
+      <div class="date-controls">
+        <button type="button" class="nav-btn" (click)="prevMonth()">‹</button>
+        <div class="month-label">{{ monthLabel() }}</div>
+        <button type="button" class="nav-btn" (click)="nextMonth()">›</button>
+        <select class="year-select" [ngModel]="year()" (ngModelChange)="setYear($event)">
+          <option [value]="year() - 1">{{ year() - 1 }}</option>
+          <option [value]="year()">{{ year() }}</option>
+          <option [value]="year() + 1">{{ year() + 1 }}</option>
+        </select>
+      </div>
+    }
+
+    @if (filterMode() === 'year') {
+      <div class="date-controls">
+        <select class="year-select" [ngModel]="year()" (ngModelChange)="setYear($event)">
+          @for (y of [year() - 2, year() - 1, year(), year() + 1, year() + 2]; track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (filterMode() === 'range') {
+      <div class="range-controls">
+        <div class="preset-row">
+          <button type="button" class="pill" [class.active]="rangePreset() === '3m'" (click)="setRangePresetMonths('3m', 3)">3 meses</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === '6m'" (click)="setRangePresetMonths('6m', 6)">6 meses</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === '12m'" (click)="setRangePresetMonths('12m', 12)">12 meses</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === 'this-year'" (click)="setRangePresetThisYear()">Este año</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === 'last-year'" (click)="setRangePresetLastYear()">Año pasado</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === '3y'" (click)="setRangePresetYears('3y', 3)">3 años</button>
+          <button type="button" class="pill" [class.active]="rangePreset() === '5y'" (click)="setRangePresetYears('5y', 5)">5 años</button>
+        </div>
+        <div class="date-controls">
+          <input type="date" [ngModel]="rangeFrom()" (ngModelChange)="setRangeFrom($event)" />
+          <span class="hint">a</span>
+          <input type="date" [ngModel]="rangeTo()" (ngModelChange)="setRangeTo($event)" />
+        </div>
+      </div>
+    }
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn-add" (click)="openQuickAdd()">+ Agregar movimiento</button>
+  </div>
+</div>
+
+@if (showQuickAdd()) {
+  <div class="modal-backdrop" (click)="closeQuickAdd()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>Agregar movimiento</span>
+        <button type="button" class="btn-close" (click)="closeQuickAdd()">×</button>
+      </div>
+      <div class="type-toggle">
+        <button type="button" class="pill wide" [class.active]="quickType() === 'EXPENSE'" (click)="setQuickType('EXPENSE')">Gasto</button>
+        <button type="button" class="pill wide" [class.active]="quickType() === 'INCOME'" (click)="setQuickType('INCOME')">Ingreso</button>
+      </div>
+      <div class="modal-form">
+        <div class="row">
+          <input class="mono" placeholder="Monto" [ngModel]="quickAmount()" (ngModelChange)="quickAmount.set($event)" />
+          <select [ngModel]="quickCurrency()" (ngModelChange)="setQuickCurrency($event)">
+            <option value="ARS">ARS</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        @if (quickCurrency() === 'USD') {
+          <input class="mono" placeholder="Cotización usada (ej. 1280)" [ngModel]="quickRate()" (ngModelChange)="quickRate.set($event)" />
+        }
+        <select [ngModel]="quickCategoryId()" (ngModelChange)="setQuickCategoryId($event)">
+          <option [value]="null">Elegí categoría…</option>
+          @for (cat of quickCategoriesForType(); track cat.id) {
+            <option [value]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+        <input placeholder="Descripción (opcional)" [ngModel]="quickDescription()" (ngModelChange)="quickDescription.set($event)" />
+        <input type="date" [ngModel]="quickDate()" (ngModelChange)="quickDate.set($event)" />
+        <button type="button" class="btn-save-tx" [disabled]="!canSaveQuick()" (click)="saveQuickTx()">Guardar movimiento</button>
+        @if (quickSaved()) {
+          <div class="saved-msg">✓ Movimiento agregado.</div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<div class="stat-cards">
+  <div class="stat-card total-card">
+    <div class="card-head">
+      <span class="icon">⇄</span>
+      <span class="card-title">Balance total combinado</span>
+      <div class="currency-toggle">
+        <button type="button" class="pill mono" [class.active]="viewCurrency() === 'ARS'" (click)="setViewCurrency('ARS')">ARS</button>
+        <button type="button" class="pill mono" [class.active]="viewCurrency() === 'USD'" (click)="setViewCurrency('USD')">USD</button>
+      </div>
+    </div>
+    <div class="card-lines">
+      <div class="line"><span>Ingresos</span><span class="mono income">{{ totalIncomeDisplay() | currencyFormat: viewCurrency() }}</span></div>
+      <div class="line"><span>Gastos</span><span class="mono expense">{{ totalExpenseDisplay() | currencyFormat: viewCurrency() }}</span></div>
+      <div class="divider"></div>
+      <div class="line total"><span>Balance</span><span class="mono" [class.income]="totalBalanceDisplay() >= 0" [class.expense]="totalBalanceDisplay() < 0">{{ totalBalanceDisplay() | currencyFormat: viewCurrency() }}</span></div>
+    </div>
+    <div class="combined-note">
+      Pesos + dólares pesificados{{ blueRate() ? ' a $' + blueRate()!.toFixed(0) + ' (dólar blue)' : (avgUsdRate() ? ' a $' + avgUsdRate()!.toFixed(0) : '') }}, sumados en un único total.
+    </div>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="breakdown-card">
+    <div class="breakdown-header">
+      <span class="card-title">Gastos por categoría (combinado, en {{ viewCurrency() }})</span>
+      <div class="toggles">
+        <button type="button" class="pill" [class.active]="dashType() === 'EXPENSE'" (click)="setDashType('EXPENSE')">Gastos</button>
+        <button type="button" class="pill" [class.active]="dashType() === 'INCOME'" (click)="setDashType('INCOME')">Ingresos</button>
+      </div>
+    </div>
+
+    <div class="net-row">
+      <div class="net-item"><span>Gastos</span><span class="mono expense">{{ totalExpenseDisplay() | currencyFormat: viewCurrency() }}</span></div>
+      <div class="net-item"><span>Ingresos</span><span class="mono income">{{ totalIncomeDisplay() | currencyFormat: viewCurrency() }}</span></div>
+      <div class="net-item net-total"><span>Neto</span><span class="mono" [class.income]="totalBalanceDisplay() >= 0" [class.expense]="totalBalanceDisplay() < 0">{{ totalBalanceDisplay() | currencyFormat: viewCurrency() }}</span></div>
+    </div>
+
+    @if (breakdown().length > 0) {
+      <div class="breakdown-body">
+        <div class="gauge" [style.background]="'conic-gradient(' + categoryGaugeGradient() + ')'">
+          <div class="gauge-inner">
+            <span class="gauge-label">Total {{ dashType() === 'EXPENSE' ? 'gastado' : 'ingresado' }}</span>
+            <span class="gauge-value mono">{{ breakdownTotal() | currencyFormat: viewCurrency() }}</span>
+            <span class="gauge-sub">{{ breakdownCategoryCount() }} categorías · {{ periodLabel() }}</span>
+          </div>
+        </div>
+        <div class="breakdown-list">
+          @for (b of breakdown(); track b.name) {
+            <div class="breakdown-item">
+              <div class="item-row">
+                <div class="item-label">
+                  <span class="dot" [style.background]="b.color"></span>
+                  <span>{{ b.name }}</span>
+                  <span class="muted">{{ b.count }} mov.</span>
+                </div>
+                <span class="mono">{{ b.amount | currencyFormat: viewCurrency() }} <span class="muted">· {{ b.pct }}%</span></span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="b.pct" [style.background]="b.color"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="empty-state">No hay movimientos de este tipo en {{ periodLabel() }}.</div>
+    }
+  </div>
+
+  <div class="side-col">
+    <div class="side-card">
+      <div class="card-title">Últimos movimientos (en {{ viewCurrency() }})</div>
+      <div class="recent-list">
+        @for (r of recentTxDisplay(); track r.id) {
+          <div class="recent-row">
+            <div>
+              <div class="recent-desc">{{ r.description }}</div>
+              <div class="recent-meta">{{ r.category.name }} · {{ r.date }}</div>
+            </div>
+            <span class="mono" [class.income]="r.type === 'INCOME'" [class.expense]="r.type === 'EXPENSE'">
+              {{ r.type === 'INCOME' ? '+' : '-' }}{{ r.displayAmount | currencyFormat: viewCurrency() }}
+            </span>
+          </div>
+        }
+        @if (recentTxDisplay().length === 0) {
+          <div class="empty-state small">Sin movimientos este mes.</div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-cards">
+  <div class="stat-card">
+    <div class="card-head">
+      <span class="icon">$</span>
+      <span class="card-title">Detalle en Pesos ARS</span>
+    </div>
+    <div class="card-lines">
+      <div class="line"><span>Ingresos</span><span class="mono income">{{ arsIncome() | currencyFormat: 'ARS' }}</span></div>
+      <div class="line"><span>Gastos</span><span class="mono expense">{{ arsExpense() | currencyFormat: 'ARS' }}</span></div>
+      <div class="divider"></div>
+      <div class="line total"><span>Balance</span><span class="mono" [class.income]="arsBalance() >= 0" [class.expense]="arsBalance() < 0">{{ arsBalance() | currencyFormat: 'ARS' }}</span></div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="card-head">
+      <span class="icon">US$</span>
+      <span class="card-title">Detalle en Dólares USD</span>
+    </div>
+    <div class="card-lines">
+      <div class="line"><span>Ingresos</span><span class="mono income">{{ usdIncome() | currencyFormat: 'USD' }}</span></div>
+      <div class="line"><span>Gastos</span><span class="mono expense">{{ usdExpense() | currencyFormat: 'USD' }}</span></div>
+      <div class="divider"></div>
+      <div class="line total"><span>Balance</span><span class="mono" [class.income]="usdBalance() >= 0" [class.expense]="usdBalance() < 0">{{ usdBalance() | currencyFormat: 'USD' }}</span></div>
+    </div>
+  </div>
+</div>

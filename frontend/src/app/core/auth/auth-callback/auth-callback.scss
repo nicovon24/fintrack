@@ -1,0 +1,17 @@
+.callback-message {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+
+  &.error {
+    color: var(--expense);
+  }
+
+  a {
+    color: var(--accent);
+    margin-left: 6px;
+  }
+}

@@ -1,0 +1,5 @@
+@if (error()) {
+  <div class="callback-message error">No se pudo iniciar sesión. <a routerLink="/login">Volver a intentar</a></div>
+} @else {
+  <div class="callback-message">Iniciando sesión…</div>
+}

@@ -1,0 +1,77 @@
+/* Global styles + design tokens (from docs/initial-design.html) */
+
+:root,
+html[data-theme='dark'] {
+  --bg: #0b1420;
+  --card-bg: #101c2c;
+  --sidebar-bg: #0e1826;
+  --divider: #1d3348;
+  --text-primary: #e7edf5;
+  --text-secondary: #9fb0c3;
+  --text-muted: #6b7c8f;
+  --accent: #1a94b0;
+  --accent-bg: rgba(26, 148, 176, 0.15);
+  --income: #34d399;
+  --income-bg: rgba(52, 211, 153, 0.1);
+  --income-border: rgba(52, 211, 153, 0.35);
+  --expense: #f26d6d;
+  --expense-bg: rgba(242, 109, 109, 0.1);
+  --expense-border: rgba(242, 109, 109, 0.35);
+  --warn: #f0b46b;
+  --warn-bg: rgba(240, 180, 107, 0.1);
+  --warn-border: rgba(240, 180, 107, 0.35);
+  --warn-icon-bg: rgba(240, 180, 107, 0.18);
+  --warn-text: #d9a05a;
+}
+
+html[data-theme='light'] {
+  --bg: #f4f7fb;
+  --card-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --divider: #e1e7ef;
+  --text-primary: #16202c;
+  --text-secondary: #55677c;
+  --text-muted: #8b9aab;
+  --accent: #1a94b0;
+  --accent-bg: rgba(26, 148, 176, 0.1);
+  --income: #16a06b;
+  --income-bg: rgba(22, 160, 107, 0.08);
+  --income-border: rgba(22, 160, 107, 0.3);
+  --expense: #d94848;
+  --expense-bg: rgba(217, 72, 72, 0.08);
+  --expense-border: rgba(217, 72, 72, 0.3);
+  --warn: #b9791f;
+  --warn-bg: rgba(185, 121, 31, 0.08);
+  --warn-border: rgba(185, 121, 31, 0.3);
+  --warn-icon-bg: rgba(185, 121, 31, 0.15);
+  --warn-text: #93611a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::placeholder {
+  color: var(--text-muted);
+}
+
+button {
+  font-family: inherit;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}

@@ -38,4 +38,10 @@ public class GlobalExceptionHandler {
         ApiError error = ApiError.of(HttpStatus.BAD_REQUEST.value(), "Import Validation Error", ex.getMessages());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiError> handleDuplicateResource(DuplicateResourceException ex) {
+        ApiError error = ApiError.of(HttpStatus.CONFLICT.value(), "Duplicate Resource", List.of(ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 }

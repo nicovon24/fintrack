@@ -1,0 +1,8 @@
+@if (result(); as r) {
+  <div class="success-card">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Importación completada</div>
+    <div class="success-detail">{{ r.importedCount }} transacciones importadas</div>
+    <button type="button" class="btn-dashboard" (click)="goToDashboard.emit()">Ver dashboard</button>
+  </div>
+}
