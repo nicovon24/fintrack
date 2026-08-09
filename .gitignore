@@ -1,0 +1,44 @@
+# Reglas a nivel monorepo. backend/ y frontend/ tienen ademas su propio
+# .gitignore especifico de su stack (Maven / npm respectivamente).
+
+### Secretos / entorno local ###
+.env
+.env.*
+!.env.example
+*.local
+
+### Sistema operativo ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### Editores ###
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+
+### Node / Angular (frontend, cuando exista) ###
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+### Java / Maven (por si se agrega algo fuera de backend/) ###
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+### Logs propios de la app ###
+*.log
+logs/
+
+### Claude Code (skills, MCPs, config local) ###
+.claude/settings.local.json
+.mcp.json
+CLAUDE.local.md
+.claude/.credentials.json

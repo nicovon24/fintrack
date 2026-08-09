@@ -1,0 +1,54 @@
+package com.nicolas.finanzas.category.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.nicolas.finanzas.category.dto.CategoryRequest;
+import com.nicolas.finanzas.category.dto.CategoryResponse;
+import com.nicolas.finanzas.category.model.Category;
+import com.nicolas.finanzas.category.repository.CategoryRepository;
+import com.nicolas.finanzas.exception.ResourceNotFoundException;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+
+    public List<CategoryResponse> findAll() {
+        return categoryRepository.findAll().stream()
+                .map(CategoryResponse::from)
+                .toList();
+    }
+
+    public CategoryResponse findById(Long id) {
+        return CategoryResponse.from(getCategoryOrThrow(id));
+    }
+
+    public CategoryResponse create(CategoryRequest request) {
+        Category category = new Category();
+        category.setName(request.name());
+        category.setType(request.type());
+        return CategoryResponse.from(categoryRepository.save(category));
+    }
+
+    public CategoryResponse update(Long id, CategoryRequest request) {
+        Category category = getCategoryOrThrow(id);
+        category.setName(request.name());
+        category.setType(request.type());
+        return CategoryResponse.from(categoryRepository.save(category));
+    }
+
+    public void delete(Long id) {
+        Category category = getCategoryOrThrow(id);
+        categoryRepository.delete(category);
+    }
+
+    public Category getCategoryOrThrow(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada: " + id));
+    }
+}

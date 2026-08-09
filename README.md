@@ -1,40 +1,40 @@
 # FinTrack
 
-App personal de finanzas: gestión de ingresos y gastos (con import de tus excels existentes) y análisis de inversiones (cotizaciones en tiempo real, ARS/USD). Proyecto de aprendizaje para practicar Java/Spring Boot en profundidad y Angular, de cara a un puesto que combina ambos stacks.
+Personal finance app: income/expense management (with import from existing excel files) and investment analysis (real-time quotes, ARS/USD). Learning project to practice Java/Spring Boot in depth and Angular, aimed at a role that combines both stacks.
 
-## Estructura
+## Structure
 
 ```text
 fintrack/
 ├── backend/     # Java 25 + Spring Boot 4 + PostgreSQL (Maven)
-└── frontend/    # Angular (todavía no iniciado)
+└── frontend/    # Angular (not started yet)
 ```
 
-Cada subcarpeta tiene su propio `AGENTS.md` con las convenciones de código de esa parte del stack — léelo antes de tocar código ahí, ya sea vos o un agente de IA.
+Each subfolder has its own `AGENTS.md` with the code conventions for that part of the stack — read it before touching code there, whether you or an AI agent.
 
 ## Roadmap
 
-1. ✅ **v1 backend**: CRUD de ingresos/gastos y categorías, resumen mensual, Swagger.
-2. 🔜 Import de excels existentes (Apache POI) — cargar un año completo de gastos/ingresos de una.
-3. 🔜 Frontend Angular: dashboard con gráficos sobre los datos del backend.
-4. 🔜 Módulo de inversiones: tenencias, cotizaciones en tiempo real (dólar blue/oficial, IOL), toggle ARS/USD.
+1. ✅ **v1 backend**: income/expense and category CRUD, monthly summary, Swagger.
+2. 🔜 Import existing excel files (Apache POI) — load a full year of expenses/income at once.
+3. 🔜 Angular frontend: dashboard with charts over the backend data.
+4. 🔜 Investment module: holdings, real-time quotes (dolar blue/oficial, IOL), ARS/USD toggle.
 
 ## Getting started (backend)
 
 ```bash
 cd backend
-docker compose up -d          # levanta Postgres local
-./mvnw spring-boot:run        # requiere JDK 25 activo
+docker compose up -d          # start local Postgres
+./mvnw spring-boot:run        # requires an active JDK 25
 ```
 
 - API: `http://localhost:8082`
 - Swagger UI: `http://localhost:8082/swagger-ui/index.html`
 
 ```bash
-./mvnw test                   # correr los tests
+./mvnw test                   # run the tests
 ```
 
-## Documentación
+## Documentation
 
-- `backend/AGENTS.md` + `backend/.agentic-rules/` — convenciones de código por capa (entity, dto, repository, service, controller, testing).
-- `backend/docs/specs/` — specs de cada feature. Antes de implementar algo no trivial, se escribe una spec ahí primero (ver `_TEMPLATE.md`).
+- `backend/AGENTS.md` + `backend/.agentic-rules/` — code conventions per layer (entity, dto, repository, service, controller, testing).
+- `backend/docs/specs/` — specs for each feature. Before implementing anything non-trivial, a spec is written there first (see `_TEMPLATE.md`).

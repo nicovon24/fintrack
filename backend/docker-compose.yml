@@ -1,0 +1,27 @@
+# Postgres local para la API de gastos e ingresos.
+#
+# Uso:
+#   docker compose up -d      -> levanta la base
+#   docker compose down       -> la baja (los datos persisten en el volumen)
+#   docker compose down -v    -> la baja y borra los datos
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gastos-ingresos-postgres
+    environment:
+      POSTGRES_DB: gastosdb
+      POSTGRES_USER: gastos
+      POSTGRES_PASSWORD: gastos123
+    ports:
+      - "55432:5432"
+    volumes:
+      - gastos-ingresos-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gastos -d gastosdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  gastos-ingresos-data:
