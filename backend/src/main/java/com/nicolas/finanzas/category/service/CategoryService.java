@@ -1,6 +1,7 @@
 package com.nicolas.finanzas.category.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -9,6 +10,7 @@ import com.nicolas.finanzas.category.dto.CategoryResponse;
 import com.nicolas.finanzas.category.model.Category;
 import com.nicolas.finanzas.category.repository.CategoryRepository;
 import com.nicolas.finanzas.exception.ResourceNotFoundException;
+import com.nicolas.finanzas.transaction.model.TransactionType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,5 +52,9 @@ public class CategoryService {
     public Category getCategoryOrThrow(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada: " + id));
+    }
+
+    public Optional<Category> findByNameAndType(String name, TransactionType type) {
+        return categoryRepository.findByNameIgnoreCaseAndType(name, type);
     }
 }

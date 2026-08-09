@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.nicolas.finanzas.category.model.Category;
+import com.nicolas.finanzas.user.model.User;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,4 +42,12 @@ public class Transaction {
 
     @ManyToOne
     private Category category;
+
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
+
+    private BigDecimal exchangeRate;
+
+    @ManyToOne
+    private User user;
 }

@@ -12,6 +12,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:unset}
+            client-secret: ${GOOGLE_CLIENT_SECRET:unset}
+            scope: openid, email, profile
 
 springdoc:
   swagger-ui:
@@ -21,3 +29,11 @@ springdoc:
 
 server:
   port: 8082
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:this-is-a-dev-only-secret-change-it-before-prod-32b}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  frontend-redirect-uri: ${FRONTEND_REDIRECT_URI:http://localhost:4200/auth/callback}
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
