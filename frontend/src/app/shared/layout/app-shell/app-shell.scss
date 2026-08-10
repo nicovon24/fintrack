@@ -1,8 +1,35 @@
 .shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   background: var(--bg);
   color: var(--text-primary);
+  overflow: hidden;
+}
+
+.mobile-topbar {
+  display: none;
+}
+
+.hamburger-btn,
+.close-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn {
+  display: none;
+  margin-left: auto;
+  font-size: 16px;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .sidebar {
@@ -12,6 +39,7 @@
   border-right: 1px solid var(--divider);
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .brand {
@@ -155,12 +183,72 @@
 .main {
   flex: 1;
   min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .content {
   flex: 1;
+  min-height: 0;
   padding: 28px;
   overflow: auto;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    display: block;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--divider);
+    background: var(--sidebar-bg);
+    box-sizing: border-box;
+
+    .brand {
+      padding: 0;
+    }
+  }
+
+  .close-btn {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    width: 100%;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+
+    .brand {
+      padding: 16px 16px 12px;
+    }
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 55;
+  }
+
+  .main {
+    height: calc(100% - 52px);
+  }
+
+  .content {
+    padding: 16px;
+  }
 }

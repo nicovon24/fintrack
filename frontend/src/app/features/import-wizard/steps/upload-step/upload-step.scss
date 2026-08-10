@@ -1,4 +1,15 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .upload-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   border: 1px solid var(--divider);
   border-radius: 10px;
   background: var(--card-bg);
@@ -6,7 +17,12 @@
 }
 
 .dropzone {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
   position: relative;
   border: 1.5px dashed var(--divider);
   border-radius: 8px;

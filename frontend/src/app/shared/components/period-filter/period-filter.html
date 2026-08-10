@@ -1,0 +1,49 @@
+<div class="filter-controls">
+  <div class="mode-toggle">
+    <button type="button" class="pill" [class.active]="mode() === 'month'" (click)="setMode('month')">Mes</button>
+    <button type="button" class="pill" [class.active]="mode() === 'year'" (click)="setMode('year')">Año</button>
+    <button type="button" class="pill" [class.active]="mode() === 'range'" (click)="setMode('range')">Rango</button>
+    <button type="button" class="pill" [class.active]="mode() === 'rangeCustom'" (click)="setMode('rangeCustom')">Rango custom</button>
+  </div>
+
+  @if (mode() === 'month') {
+    <div class="date-controls">
+      <button type="button" class="nav-btn" (click)="prevMonth()">‹</button>
+      <div class="month-label">{{ monthLabel() }}</div>
+      <button type="button" class="nav-btn" (click)="nextMonth()">›</button>
+      <select class="year-select" [ngModel]="year()" (ngModelChange)="setYear($event)">
+        <option [value]="year() - 1">{{ year() - 1 }}</option>
+        <option [value]="year()">{{ year() }}</option>
+        <option [value]="year() + 1">{{ year() + 1 }}</option>
+      </select>
+    </div>
+  }
+
+  @if (mode() === 'year') {
+    <div class="date-controls">
+      <select class="year-select" [ngModel]="year()" (ngModelChange)="setYear($event)">
+        @for (y of [year() - 2, year() - 1, year(), year() + 1, year() + 2]; track y) {
+          <option [value]="y">{{ y }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  @if (mode() === 'range') {
+    <div class="preset-row">
+      <button type="button" class="pill small" [class.active]="rangePreset() === '6m'" (click)="setRangePresetMonths('6m', 6)">6 meses</button>
+      <button type="button" class="pill small" [class.active]="rangePreset() === 'this-year'" (click)="setRangePresetThisYear()">Este año</button>
+      <button type="button" class="pill small" [class.active]="rangePreset() === 'last-year'" (click)="setRangePresetLastYear()">Año pasado</button>
+      <button type="button" class="pill small" [class.active]="rangePreset() === '3y'" (click)="setRangePresetYears('3y', 3)">3 años</button>
+      <button type="button" class="pill small" [class.active]="rangePreset() === '5y'" (click)="setRangePresetYears('5y', 5)">5 años</button>
+    </div>
+  }
+
+  @if (mode() === 'rangeCustom') {
+    <div class="date-controls">
+      <input type="date" [ngModel]="rangeFrom()" (ngModelChange)="setRangeFrom($event)" />
+      <span class="hint">a</span>
+      <input type="date" [ngModel]="rangeTo()" (ngModelChange)="setRangeTo($event)" />
+    </div>
+  }
+</div>

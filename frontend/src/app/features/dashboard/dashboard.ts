@@ -5,18 +5,17 @@ import { DolarBlueService } from '../../core/services/dolar-blue.service';
 import { CategoryResponse } from '../../core/models/category.model';
 import { Currency, TransactionResponse, TransactionType } from '../../core/models/transaction.model';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { PeriodChange, PeriodFilter } from '../../shared/components/period-filter/period-filter';
 import { CategoriesService } from '../categories/categories.service';
 import { TransactionFilters, TransactionsService } from '../transactions/transactions.service';
 import { DashboardService } from './dashboard.service';
 
-const MONTHS = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-];
-
-type FilterMode = 'month' | 'year' | 'range';
-
 const PALETTE = ['#7c9cf0', '#f0b46b', '#7fd1ae', '#e18ba0', '#8fd3e8', '#c9a6f0', '#e08f6b', '#9ad17f'];
+
+function currentMonthFilters(): TransactionFilters {
+  const now = new Date();
+  return { month: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` };
+}
 
 interface BreakdownItem {
   name: string;
@@ -29,7 +28,7 @@ interface BreakdownItem {
 // Resumen mensual: totales por moneda + combinado ARS + breakdown por categoria.
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, CurrencyFormatPipe],
+  imports: [FormsModule, CurrencyFormatPipe, PeriodFilter],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -39,42 +38,8 @@ export class Dashboard {
   private readonly categoriesService = inject(CategoriesService);
   private readonly dolarBlueService = inject(DolarBlueService);
 
-  protected readonly filterMode = signal<FilterMode>('month');
-
-  protected readonly year = signal(new Date().getFullYear());
-  protected readonly monthIndex = signal(new Date().getMonth());
-  protected readonly monthLabel = computed(
-    () => `${MONTHS[this.monthIndex()]} ${this.year()}`
-  );
-  protected readonly monthKey = computed(
-    () => `${this.year()}-${String(this.monthIndex() + 1).padStart(2, '0')}`
-  );
-
-  protected readonly rangeFrom = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
-  protected readonly rangeTo = signal(new Date().toISOString().slice(0, 10));
-  protected readonly rangePreset = signal<string | null>(null);
-
-  protected readonly periodLabel = computed(() => {
-    switch (this.filterMode()) {
-      case 'year':
-        return `Año ${this.year()}`;
-      case 'range':
-        return `${this.rangeFrom()} a ${this.rangeTo()}`;
-      default:
-        return this.monthLabel();
-    }
-  });
-
-  protected readonly activeFilters = computed<TransactionFilters>(() => {
-    switch (this.filterMode()) {
-      case 'year':
-        return { from: `${this.year()}-01-01`, to: `${this.year()}-12-31` };
-      case 'range':
-        return { from: this.rangeFrom(), to: this.rangeTo() };
-      default:
-        return { month: this.monthKey() };
-    }
-  });
+  protected readonly periodLabel = signal('');
+  protected readonly activeFilters = signal<TransactionFilters>(currentMonthFilters());
 
   protected readonly blueRate = signal<number | null>(null);
 
@@ -220,74 +185,9 @@ export class Dashboard {
     });
   }
 
-  prevMonth(): void {
-    this.shiftMonth(-1);
-  }
-
-  nextMonth(): void {
-    this.shiftMonth(1);
-  }
-
-  private shiftMonth(delta: number): void {
-    let m = this.monthIndex() + delta;
-    let y = this.year();
-    if (m < 0) {
-      m = 11;
-      y -= 1;
-    } else if (m > 11) {
-      m = 0;
-      y += 1;
-    }
-    this.monthIndex.set(m);
-    this.year.set(y);
-  }
-
-  setYear(value: string): void {
-    this.year.set(Number(value));
-  }
-
-  setFilterMode(mode: FilterMode): void {
-    this.filterMode.set(mode);
-  }
-
-  setRangeFrom(value: string): void {
-    this.rangeFrom.set(value);
-    this.rangePreset.set(null);
-  }
-
-  setRangeTo(value: string): void {
-    this.rangeTo.set(value);
-    this.rangePreset.set(null);
-  }
-
-  setRangePresetMonths(key: string, months: number): void {
-    const to = new Date();
-    const from = new Date(to.getFullYear(), to.getMonth() - months + 1, 1);
-    this.rangeFrom.set(from.toISOString().slice(0, 10));
-    this.rangeTo.set(to.toISOString().slice(0, 10));
-    this.rangePreset.set(key);
-  }
-
-  setRangePresetYears(key: string, years: number): void {
-    const to = new Date();
-    const from = new Date(to.getFullYear() - years + 1, 0, 1);
-    this.rangeFrom.set(from.toISOString().slice(0, 10));
-    this.rangeTo.set(to.toISOString().slice(0, 10));
-    this.rangePreset.set(key);
-  }
-
-  setRangePresetThisYear(): void {
-    const now = new Date();
-    this.rangeFrom.set(`${now.getFullYear()}-01-01`);
-    this.rangeTo.set(now.toISOString().slice(0, 10));
-    this.rangePreset.set('this-year');
-  }
-
-  setRangePresetLastYear(): void {
-    const lastYear = new Date().getFullYear() - 1;
-    this.rangeFrom.set(`${lastYear}-01-01`);
-    this.rangeTo.set(`${lastYear}-12-31`);
-    this.rangePreset.set('last-year');
+  onPeriodChange(event: PeriodChange): void {
+    this.activeFilters.set(event.filters);
+    this.periodLabel.set(event.label);
   }
 
   setViewCurrency(c: Currency): void {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -30,6 +30,7 @@ export class AppShell {
   protected readonly authService = inject(AuthService);
 
   protected readonly navItems = NAV_ITEMS;
+  protected readonly mobileNavOpen = signal(false);
 
   constructor() {
     this.authService.loadCurrentUser().catch(() => {
@@ -39,6 +40,14 @@ export class AppShell {
 
   toggleTheme(): void {
     this.theme.toggle();
+  }
+
+  toggleMobileNav(): void {
+    this.mobileNavOpen.update((v) => !v);
+  }
+
+  closeMobileNav(): void {
+    this.mobileNavOpen.set(false);
   }
 
   logout(): void {
