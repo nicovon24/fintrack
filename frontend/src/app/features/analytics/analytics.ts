@@ -127,10 +127,15 @@ export class Analytics {
       error: () => this.blueRate.set(null)
     });
 
+    // requestId descarta respuestas viejas: si el usuario cambia de periodo rapido, una
+    // request lenta de un filtro anterior no debe pisar los datos del filtro actual.
+    let requestId = 0;
     effect(() => {
       const filters = this.activeFilters();
+      const id = ++requestId;
       this.loading.set(true);
       this.transactionsService.findAll(filters).subscribe((tx) => {
+        if (id !== requestId) return;
         this.transactions.set(tx);
         this.loading.set(false);
       });

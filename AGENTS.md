@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-Personal finance app: income/expense management (with excel import planned) and investment analysis (real-time quotes, ARS/USD). Personal learning project to practice Java/Spring Boot + Angular in depth.
+Personal finance app: income/expense management (excel/CSV import), analytics, and investment tracking (live IOL brokerage holdings, dolar-blue-pesified ARS/USD totals, net worth). Personal learning project to practice Java/Spring Boot + Angular in depth.
 
 ## Monorepo Structure
 
-- `backend/` — Java 25 + Spring Boot 4 + PostgreSQL (Maven)
+- `backend/` — Java 21 (runtime targets JDK 25) + Spring Boot 4 + PostgreSQL (Maven)
 - `frontend/` — Angular 22, standalone components + signals (npm)
 - `docs/` (root) — all specs and docs live here, for both backend and frontend (`docs/specs/`, plus reference docs like `databases.md`)
 
@@ -17,9 +17,10 @@ Each subfolder has its own `AGENTS.md` and `.agentic-rules/` with the convention
 ## Roadmap (high level)
 
 1. **v1 backend** (done): income/expense and category CRUD, monthly summary, Swagger.
-2. Import user's existing excel files (Apache POI).
-3. Angular frontend: dashboard with charts over the backend data.
-4. Investment module: manual holdings entry, then real-time quotes (dolar blue/oficial, IOL), ARS/USD toggle.
+2. **Excel/CSV import** (done): Apache POI wizard plus a CSV/TXT path (`docs/specs/03`, `docs/specs/06`).
+3. **Angular frontend** (done): dashboard, transactions, categories, analytics, all backed by the API.
+4. **Investment module** (done): live IOL portfolio (zero server-side persistence, see `docs/specs/07`), ARS/USD toggle, consolidated net worth tab, privacy mode to mask amounts for demos.
+5. **Open**: savings currently persist client-side only (`localStorage`, not a backend entity) — backend `SavingEntry` CRUD from `docs/specs/07` was never implemented. Data export (CSV/XLSX/PDF), also scoped in `docs/specs/07`, wasn't implemented either.
 
 ## Language Policy
 

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-REST API for personal finance management: income, expenses, categories, and (planned) investments and excel import. This is v1 of a bigger project: later an Angular frontend and investment modules with real-time quotes get added.
+REST API for personal finance management: income, expenses, categories, excel/CSV import, and a live IOL (invertironline.com) proxy for investment holdings — zero server-side persistence for anything IOL-related (see `../docs/specs/07-savings-investments-and-export.md`). Paired with an Angular 22 frontend in `../frontend/`.
 
 ## Rule-Selection Guide (Token Optimization)
 

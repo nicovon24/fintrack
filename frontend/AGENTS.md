@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Angular SPA for personal finance management: transactions, categories, excel import wizard, and (planned) investment dashboard with real-time quotes. Consumes the `backend/` REST API. Auth via Google OAuth2 (JWT).
+Angular SPA for personal finance management: transactions, categories, excel/CSV import wizard, dashboard/analytics with combined ARS+USD (dolar-blue-pesified) totals, and an investments module (live IOL portfolio, manual savings, consolidated net worth). A sidebar "privacy mode" toggle masks all displayed amounts for demos. Consumes the `backend/` REST API. Auth via Google OAuth2 (JWT).
 
 ## Rule-Selection Guide (Token Optimization)
 

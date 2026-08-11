@@ -153,14 +153,20 @@ export class Dashboard {
       error: () => this.blueRate.set(null)
     });
 
+    // requestId descarta respuestas viejas: si el usuario cambia de periodo rapido, una
+    // request lenta de un filtro anterior no debe pisar los datos del filtro actual.
+    let requestId = 0;
     effect(() => {
       const filters = this.activeFilters();
+      const id = ++requestId;
       this.loading.set(true);
       this.transactionsService.findAll(filters).subscribe((tx) => {
+        if (id !== requestId) return;
         this.monthTransactions.set(tx);
         this.loading.set(false);
       });
       this.dashboardService.getSummary(filters).subscribe((summary) => {
+        if (id !== requestId) return;
         const ars = summary.byCurrency.find((c) => c.currency === 'ARS');
         const usd = summary.byCurrency.find((c) => c.currency === 'USD');
         this.arsIncome.set(ars?.totalIncome ?? 0);

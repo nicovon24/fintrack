@@ -1,5 +1,10 @@
 # Spec: Savings & Investments module + Data export (PDF/CSV/XLS)
 
+> **Implementation status**: Investments (IOL) shipped as specced below — stateless proxy, zero
+> server-side persistence. Savings and Export diverged from this spec; see
+> [Implementation notes](#implementation-notes-post-launch) at the end of this document before
+> treating the sections below as current behavior.
+
 ## What it solves
 
 Three related gaps closed together:
@@ -75,3 +80,31 @@ No new entities for export — it reads existing `Transaction` rows via `Transac
 - Exporting savings/investments, not just transactions.
 - Scheduled or emailed exports.
 - PDF charts/graphs (v1 PDF is tabular only, no embedded gauge/bar visuals).
+
+## Implementation notes (post-launch)
+
+What actually shipped, where it diverges from the scope above:
+
+- **Investments (IOL)**: implemented as specced — `backend/.../iol/` (client/service/controller/dto,
+  no entity/repository), `IolService`/`IolApiClient`, frontend `IolService` holding the token in
+  `sessionStorage`. Endpoints match the table above.
+- **Savings**: the backend `SavingEntry` CRUD (`/api/savings`) described above was **never built**.
+  Savings stayed frontend-only, but moved from an in-memory mock to `localStorage`
+  (`frontend/src/app/features/investments/investments.ts`, key `fintrack.savings`) so entries
+  survive a reload. Each entry also gained a `kind` (`BANK`/`CASH`), not in the original data model,
+  used by the net worth breakdown below. Still no cross-device sync, no backend entity.
+- **Export** (`/api/transactions/export`, CSV/XLSX/PDF): **not implemented**. No controller,
+  service, or frontend "Exportar" action exists.
+- **Net worth ("Patrimonio" tab)**: added, not in the original spec. Consolidates IOL portfolio
+  value + bank savings + cash savings into one ARS/USD-toggleable total, pesified at the dolar-blue
+  rate (same pattern as the dashboard's combined total). Falls back to an explicit
+  "couldn't fetch the rate" state instead of guessing when the blue quote fails — see `toView`/
+  `combine` in `investments.ts`.
+- **Privacy mode**: added, not in the original spec. A sidebar toggle (`core/privacy/privacy.service.ts`)
+  masks every amount rendered through `CurrencyFormatPipe` (`$ ••••`) app-wide, for demos/screenshots.
+  Descriptions, category names, and tickers are intentionally left unmasked. Chart *shapes*
+  (donut arc lengths, analytics bar heights) still derive from real proportions even when the
+  amount text is masked — known, accepted gap, not silently patched.
+
+If backend-persisted savings or export get picked up later, treat the "Scope"/"Endpoints" sections
+above as the starting design, not as already-built — verify against the current code first.

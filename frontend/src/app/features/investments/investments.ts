@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 import { IolHolding } from '../../core/models/iol.model';
 import { Currency } from '../../core/models/transaction.model';
@@ -148,7 +149,11 @@ export class Investments {
 
   private toView(value: number, from: Currency): number | null {
     const to = this.invViewCurrency();
-    if (from === to) return value;
+    // Cero es cero en cualquier moneda: no hace falta cotizacion para convertirlo. Sin este
+    // atajo, tener 0 tenencias en la moneda que no es la de vista (caso comun: recien conectado
+    // a IOL, o cartera 100% en una moneda) exigia el blue igual y tiraba abajo Patrimonio entero
+    // con el error de "no se pudo traer la cotizacion" aunque no hubiera nada que convertir.
+    if (from === to || value === 0) return value;
     const rate = this.blueRate();
     if (!rate) return null;
     return from === 'USD' ? value * rate : value / rate;
@@ -190,11 +195,13 @@ export class Investments {
     this.rateReady() ? this.investments() : this.byCurrency(this.invViewCurrency())
   );
 
+  // viewHoldings ya garantiza que toView nunca devuelva null aca: sin cotizacion filtra a la
+  // moneda de vista (from === to, atajo directo), y con cotizacion el rate siempre esta.
   protected readonly rows = computed<HoldingRow[]>(() =>
     this.viewHoldings().map((item) => ({
       ...item,
-      viewValue: this.toView(item.value, item.currency) ?? item.value,
-      viewResult: this.toView(item.result, item.currency) ?? item.result
+      viewValue: this.toView(item.value, item.currency)!,
+      viewResult: this.toView(item.result, item.currency)!
     }))
   );
 
@@ -332,28 +339,27 @@ export class Investments {
   async loadIolPortfolio(): Promise<void> {
     this.iolLoading.set(true);
     this.iolLoadError.set(null);
-    this.iolService.getPortfolio().subscribe({
-      next: (res) => {
-        this.investments.set(res.holdings);
-        this.cashArs.set(res.cashArs ?? 0);
-        this.cashUsd.set(res.cashUsd ?? 0);
-        this.iolLoading.set(false);
-      },
-      error: (err: { status?: number; error?: { error?: string; messages?: string[] } }) => {
-        this.iolLoading.set(false);
-        const isIolError = err.error?.error === 'IOL Error';
-        const detail = err.error?.messages?.join(' — ');
+    try {
+      const res = await firstValueFrom(this.iolService.getPortfolio());
+      this.investments.set(res.holdings);
+      this.cashArs.set(res.cashArs ?? 0);
+      this.cashUsd.set(res.cashUsd ?? 0);
+    } catch (err) {
+      const e = err as { status?: number; error?: { error?: string; messages?: string[] } };
+      const isIolError = e.error?.error === 'IOL Error';
+      const detail = e.error?.messages?.join(' — ');
 
-        if (err.status === 401 && isIolError) {
-          this.iolService.disconnect();
-          this.iolLoadError.set('Tu sesión de IOL venció. Volvé a conectarte.');
-        } else if (err.status === 401) {
-          this.iolLoadError.set('Tu sesión de fintrack venció. Cerrá sesión y volvé a entrar.');
-        } else {
-          this.iolLoadError.set(detail ?? `No se pudo cargar la cartera de IOL (error ${err.status ?? '?'}).`);
-        }
+      if (e.status === 401 && isIolError) {
+        this.iolService.disconnect();
+        this.iolLoadError.set('Tu sesión de IOL venció. Volvé a conectarte.');
+      } else if (e.status === 401) {
+        this.iolLoadError.set('Tu sesión de fintrack venció. Cerrá sesión y volvé a entrar.');
+      } else {
+        this.iolLoadError.set(detail ?? `No se pudo cargar la cartera de IOL (error ${e.status ?? '?'}).`);
       }
-    });
+    } finally {
+      this.iolLoading.set(false);
+    }
   }
 
   startEditSav(sav: Saving): void {
