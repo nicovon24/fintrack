@@ -23,7 +23,7 @@ export const routes: Routes = [
       },
       {
         path: 'import',
-        data: { title: 'Import Excel' },
+        data: { title: 'Cargar movimientos' },
         loadComponent: () => import('./features/import-wizard/import-wizard').then((m) => m.ImportWizard)
       },
       {
@@ -41,7 +41,7 @@ export const routes: Routes = [
       },
       {
         path: 'investments',
-        data: { title: 'Ahorros + Inversiones' },
+        data: { title: 'Mi capital' },
         loadComponent: () => import('./features/investments/investments').then((m) => m.Investments)
       },
       {

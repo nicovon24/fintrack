@@ -1,200 +1,385 @@
-<div class="tabs">
-  <button type="button" class="pill" [class.active]="tab() === 'portfolio'" (click)="setTab('portfolio')">Inversiones</button>
-  <button type="button" class="pill" [class.active]="tab() === 'savings'" (click)="setTab('savings')">Ahorros</button>
-</div>
+<div class="page">
+  <header class="page-head">
+    <div class="tabs">
+      <button type="button" class="pill" [class.active]="tab() === 'portfolio'" (click)="setTab('portfolio')">Inversiones</button>
+      <button type="button" class="pill" [class.active]="tab() === 'savings'" (click)="setTab('savings')">Ahorros</button>
+      <button type="button" class="pill" [class.active]="tab() === 'networth'" (click)="setTab('networth')">Patrimonio</button>
+    </div>
 
-@if (tab() === 'portfolio') {
-  @if (!iolConnected()) {
-    <div class="iol-banner">
-      <div>
-        <div class="iol-title">Conectá tu cuenta de Invertir Online (IOL)</div>
-        <div class="iol-sub">Sincronizá tenencias y cotizaciones automáticamente en lugar de ingresarlas a mano.</div>
-      </div>
-      <button type="button" class="btn-connect" (click)="toggleIol()">Conectar con IOL</button>
-    </div>
-  } @else {
-    <div class="iol-connected">
-      <div class="iol-connected-left">
-        <span class="status-dot"></span>
-        <span>Conectado con IOL — tenencias sincronizadas.</span>
-      </div>
-      <button type="button" class="btn-disconnect" (click)="toggleIol()">Desconectar</button>
-    </div>
-  }
-
-  <div class="portfolio-cards">
-    <div class="stat-card">
-      <div class="card-title">Cartera ARS</div>
-      <div class="card-lines">
-        <div class="line"><span>Valor actual</span><span class="mono">{{ arsValue() | currencyFormat: 'ARS' }}</span></div>
-        <div class="line"><span>Costo</span><span class="mono muted">{{ arsCost() | currencyFormat: 'ARS' }}</span></div>
-        <div class="divider"></div>
-        <div class="line total"><span>Resultado</span><span class="mono" [class.income]="arsResult() >= 0" [class.expense]="arsResult() < 0">{{ arsResult() | currencyFormat: 'ARS' }}</span></div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="card-title">Cartera USD</div>
-      <div class="card-lines">
-        <div class="line"><span>Valor actual</span><span class="mono">{{ usdValue() | currencyFormat: 'USD' }}</span></div>
-        <div class="line"><span>Costo</span><span class="mono muted">{{ usdCost() | currencyFormat: 'USD' }}</span></div>
-        <div class="divider"></div>
-        <div class="line total"><span>Resultado</span><span class="mono" [class.income]="usdResult() >= 0" [class.expense]="usdResult() < 0">{{ usdResult() | currencyFormat: 'USD' }}</span></div>
-      </div>
-    </div>
-    <div class="stat-card sim-card">
-      <div class="sim-head">
-        <span class="sim-icon">i</span>
-        <span class="card-title sim-title">Cotizaciones simuladas</span>
-      </div>
-      <div class="sim-text">Precios de ejemplo. La integración en vivo con Invertir Online (IOL) para cotizaciones automáticas está planeada para una próxima versión.</div>
-    </div>
-  </div>
-
-  <div class="charts-row">
-    <div class="alloc-card">
+    <div class="view-toggle-row">
+      <span class="view-toggle-label">Ver todo en</span>
       <div class="alloc-toggle">
         <button type="button" class="pill sm mono" [class.active]="invViewCurrency() === 'ARS'" (click)="setInvViewCurrency('ARS')">ARS</button>
         <button type="button" class="pill sm mono" [class.active]="invViewCurrency() === 'USD'" (click)="setInvViewCurrency('USD')">USD</button>
       </div>
-      <div class="alloc-body">
-        <div class="gauge" [style.background]="'conic-gradient(' + portfolioGaugeGradient() + ')'">
-          <div class="gauge-inner">
-            <span class="gauge-label">Total cartera</span>
-            <span class="gauge-value mono">{{ portfolioTotalLabel() | currencyFormat: invViewCurrency() }}</span>
+    </div>
+  </header>
+
+  @if (tab() === 'portfolio') {
+    <section class="tab-body">
+      @if (!iolConnected()) {
+        <div class="iol-banner">
+          <div>
+            <div class="iol-title">Conectá tu cuenta de Invertir Online (IOL)</div>
+            <div class="iol-sub">Vas a ver tus tenencias y cotizaciones reales. Tu usuario y contraseña se envían directo a IOL, nunca se guardan acá.</div>
+          </div>
+          <button type="button" class="btn-connect" (click)="openIolLogin()">Conectar con IOL</button>
+        </div>
+      } @else {
+        <div class="iol-connected">
+          <div class="iol-connected-left">
+            <span class="status-dot"></span>
+            <span>Conectado con IOL — tenencias en vivo.</span>
+          </div>
+          <button type="button" class="btn-disconnect" (click)="disconnectIol()">Desconectar</button>
+        </div>
+      }
+
+      @if (showIolLoginModal()) {
+        <div class="modal-backdrop" (click)="closeIolLogin()">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <span>Conectar con IOL</span>
+              <button type="button" class="btn-close" (click)="closeIolLogin()">×</button>
+            </div>
+            <div class="modal-form">
+              <input placeholder="Usuario de IOL" [ngModel]="iolUsername()" (ngModelChange)="iolUsername.set($event)" />
+              <input type="password" placeholder="Contraseña" [ngModel]="iolPassword()" (ngModelChange)="iolPassword.set($event)" (keyup.enter)="submitIolLogin()" />
+              <div class="modal-hint">Tus credenciales se envían directo a IOL y no se guardan en fintrack.</div>
+              @if (iolLoginError(); as err) {
+                <div class="modal-error">{{ err }}</div>
+              }
+              <button type="button" class="btn-connect wide" [disabled]="!iolUsername() || !iolPassword() || iolLoginSubmitting()" (click)="submitIolLogin()">
+                {{ iolLoginSubmitting() ? 'Conectando…' : 'Conectar' }}
+              </button>
+            </div>
           </div>
         </div>
-        <div class="slices">
-          @for (s of portfolioSlices(); track s.ticker) {
-            <div class="slice-row">
-              <span class="slice-label"><span class="dot" [style.background]="s.color"></span>{{ s.ticker }}</span>
-              <span class="mono muted">{{ s.pct }}%</span>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
+      }
 
-    <div class="evolution-card">
-      <div class="chart-title">Evolución del portafolio (ARS)</div>
-      <svg viewBox="0 0 300 120" class="evolution-svg">
-        <polyline [attr.points]="evolutionPoints()" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-        <polygon [attr.points]="evolutionAreaPoints()" fill="var(--accent-bg)" opacity="0.6" />
-      </svg>
-      <div class="evolution-months">
-        @for (m of evolutionMonths; track m) {
-          <span>{{ m }}</span>
-        }
-      </div>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Ticker</th>
-          <th>Nombre</th>
-          <th class="right">Cant.</th>
-          <th class="right">Precio</th>
-          <th class="right">Valor</th>
-          <th class="right">Resultado</th>
-          <th class="right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (inv of investmentsEnriched(); track inv.id) {
-          @if (editingInvId() === inv.id) {
-            <tr>
-              <td class="mono bold">{{ inv.ticker }}</td>
-              <td class="muted">{{ inv.name }}</td>
-              <td class="right"><input class="mono narrow" [ngModel]="draftInvQty()" (ngModelChange)="draftInvQty.set($event)" /></td>
-              <td class="right"><input class="mono narrow" [ngModel]="draftInvPrice()" (ngModelChange)="draftInvPrice.set($event)" /></td>
-              <td class="right muted">—</td>
-              <td class="right muted">—</td>
-              <td class="right nowrap">
-                <button type="button" class="btn-save" (click)="saveEditInv()">Guardar</button>
-                <button type="button" class="btn-cancel" (click)="cancelEditInv()">Cancelar</button>
-              </td>
-            </tr>
-          } @else {
-            <tr>
-              <td class="mono bold">{{ inv.ticker }}</td>
-              <td class="muted">{{ inv.name }}</td>
-              <td class="right mono">{{ inv.qty }}</td>
-              <td class="right mono">{{ inv.price | currencyFormat: inv.currency }}</td>
-              <td class="right mono">{{ inv.value | currencyFormat: inv.currency }}</td>
-              <td class="right mono" [class.income]="inv.result >= 0" [class.expense]="inv.result < 0">{{ inv.result | currencyFormat: inv.currency }}</td>
-              <td class="right nowrap">
-                @if (deleteConfirmInvId() === inv.id) {
-                  <span class="confirm-msg">¿Borrar?</span>
-                  <button type="button" class="btn-yes" (click)="confirmDeleteInv(inv.id)">Sí</button>
-                  <button type="button" class="btn-cancel" (click)="cancelDeleteInv()">No</button>
-                } @else {
-                  <button type="button" class="btn-edit" (click)="startEditInv(inv)">Editar</button>
-                  <button type="button" class="btn-delete" (click)="requestDeleteInv(inv.id)">Borrar</button>
-                }
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-  </div>
-} @else {
-  <div class="savings-cards">
-    <div class="stat-card">
-      <div class="card-title">Ahorrado en ARS</div>
-      <div class="card-value mono">{{ savingsArsTotal() | currencyFormat: 'ARS' }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="card-title">Ahorrado en USD</div>
-      <div class="card-value mono">{{ savingsUsdTotal() | currencyFormat: 'USD' }}</div>
-    </div>
-  </div>
-
-  <div class="savings-grid">
-    <div class="list-panel">
-      @for (sav of savings(); track sav.id) {
-        <div class="sav-row">
-          @if (editingSavId() !== sav.id) {
-            <div class="sav-view">
-              <div class="sav-main">
-                <div class="sav-label">{{ sav.label }}</div>
+      @if (iolConnected()) {
+        <div class="portfolio-cards">
+          <div class="stat-card">
+            <div class="card-title">Cartera ARS</div>
+            <div class="card-lines">
+              <div class="line"><span>Valor total</span><span class="mono">{{ arsValue() | currencyFormat: 'ARS' }}</span></div>
+              <div class="line sub"><span>Títulos {{ arsHoldingsValue() | currencyFormat: 'ARS' }}</span><span class="muted">Efectivo {{ cashArs() | currencyFormat: 'ARS' }}</span></div>
+              <div class="divider"></div>
+              <div class="line total">
+                <span>Variación</span>
+                <span class="mono" [class.income]="arsResult() >= 0" [class.expense]="arsResult() < 0">
+                  {{ arsResult() >= 0 ? '+' : '' }}{{ arsResult() | currencyFormat: 'ARS' }}
+                  <span class="pct">({{ arsResult() >= 0 ? '+' : '' }}{{ arsResultPct() | number: '1.2-2' }}%)</span>
+                </span>
               </div>
-              <span class="mono">{{ sav.amount | currencyFormat: sav.currency }}</span>
-              <button type="button" class="btn-edit" (click)="startEditSav(sav)">Editar</button>
-              <button type="button" class="btn-delete" (click)="deleteSaving(sav.id)">Borrar</button>
             </div>
-          } @else {
-            <div class="sav-edit">
-              <input [ngModel]="draftSavName()" (ngModelChange)="draftSavName.set($event)" />
-              <input class="mono narrow" [ngModel]="draftSavAmount()" (ngModelChange)="draftSavAmount.set($event)" />
-              <select [ngModel]="draftSavCurrency()" (ngModelChange)="draftSavCurrency.set($event)">
-                <option value="ARS">ARS</option>
-                <option value="USD">USD</option>
-              </select>
-              <button type="button" class="btn-save" (click)="saveEditSav()">Guardar</button>
-              <button type="button" class="btn-cancel" (click)="cancelEditSav()">Cancelar</button>
+          </div>
+          <div class="stat-card">
+            <div class="card-title">Cartera USD</div>
+            <div class="card-lines">
+              <div class="line"><span>Valor total</span><span class="mono">{{ usdValue() | currencyFormat: 'USD' }}</span></div>
+              <div class="line sub"><span>Títulos {{ usdHoldingsValue() | currencyFormat: 'USD' }}</span><span class="muted">Efectivo {{ cashUsd() | currencyFormat: 'USD' }}</span></div>
+              <div class="divider"></div>
+              <div class="line total">
+                <span>Variación</span>
+                <span class="mono" [class.income]="usdResult() >= 0" [class.expense]="usdResult() < 0">
+                  {{ usdResult() >= 0 ? '+' : '' }}{{ usdResult() | currencyFormat: 'USD' }}
+                  <span class="pct">({{ usdResult() >= 0 ? '+' : '' }}{{ usdResultPct() | number: '1.2-2' }}%)</span>
+                </span>
+              </div>
             </div>
-          }
+          </div>
         </div>
       }
-      @if (savings().length === 0) {
-        <div class="empty-state">Todavía no registraste ahorros.</div>
-      }
-    </div>
 
-    <div class="new-sav-panel">
-      <div class="card-title panel-title">Nuevo ahorro</div>
-      <div class="panel-form">
-        <input placeholder="ej. Efectivo en casa, Caja de ahorro" [ngModel]="newSavName()" (ngModelChange)="newSavName.set($event)" />
-        <input placeholder="Monto (ej. 2000)" [ngModel]="newSavAmount()" (ngModelChange)="newSavAmount.set($event)" />
-        <select [ngModel]="newSavCurrency()" (ngModelChange)="newSavCurrency.set($event)">
-          <option value="ARS">ARS</option>
-          <option value="USD">USD</option>
-        </select>
-        <button type="button" class="btn-add" [disabled]="!newSavName().trim()" (click)="addSaving()">+ Agregar ahorro</button>
+      @if (iolLoading()) {
+        <div class="loading-card">Cargando tu cartera de IOL…</div>
+      }
+
+      @if (iolLoadError(); as err) {
+        <div class="iol-error-card">
+          <span>{{ err }}</span>
+          <button type="button" class="btn-retry" (click)="loadIolPortfolio()">Reintentar</button>
+        </div>
+      }
+
+      @if (!iolConnected() && !iolLoading()) {
+        <div class="empty-state portfolio-empty grow">Conectá tu cuenta de IOL para ver tus inversiones y bonos acá.</div>
+      }
+
+      @if (iolConnected() && !iolLoading() && investments().length > 0) {
+        <div class="charts-row">
+          <div class="alloc-card">
+            <div class="card-head-row">
+              <span class="chart-title">Distribución de la cartera</span>
+              @if (!rateReady()) {
+                <span class="sample-badge" title="Sin cotización del blue no se pueden mezclar monedas">solo {{ invViewCurrency() }}</span>
+              }
+            </div>
+
+            <div class="alloc-body">
+              <app-donut-chart
+                [slices]="allocationSlices()"
+                [currency]="invViewCurrency()"
+                centerLabel="Total títulos"
+              />
+            </div>
+          </div>
+
+          <div class="total-card">
+            <div class="card-head-row">
+              <span class="chart-title">Patrimonio total</span>
+              @if (blueRate(); as rate) {
+                <span class="rate-badge mono" title="Cotización del dólar blue usada para consolidar ARS y USD">blue {{ rate | currencyFormat: 'ARS' }}</span>
+              }
+            </div>
+
+            @if (rateReady()) {
+              <div class="total-value mono">{{ totalValue() | currencyFormat: invViewCurrency() }}</div>
+
+              <div class="total-breakdown">
+                <span class="mono">{{ arsValue() | currencyFormat: 'ARS' }}</span>
+                <span class="plus">+</span>
+                <span class="mono">{{ usdValue() | currencyFormat: 'USD' }}</span>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="total-result">
+                <span>Variación</span>
+                <span class="mono" [class.income]="(totalResult() ?? 0) >= 0" [class.expense]="(totalResult() ?? 0) < 0">
+                  {{ (totalResult() ?? 0) >= 0 ? '+' : '' }}{{ totalResult() | currencyFormat: invViewCurrency() }}
+                  <span class="pct">({{ totalResultPct() >= 0 ? '+' : '' }}{{ totalResultPct() | number: '1.2-2' }}%)</span>
+                </span>
+              </div>
+
+              @if (composition(); as comp) {
+                <div class="composition">
+                  <div class="comp-bar">
+                    <span class="seg ars" [style.width.%]="comp.arsPct"></span>
+                    <span class="seg usd" [style.width.%]="comp.usdPct"></span>
+                  </div>
+                  <div class="comp-legend">
+                    <span><i class="dot ars"></i>ARS {{ comp.arsPct | number: '1.0-0' }}%</span>
+                    <span><i class="dot usd"></i>USD {{ comp.usdPct | number: '1.0-0' }}%</span>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="rate-missing">
+                <span>No se pudo traer la cotización del dólar blue, así que no se puede consolidar ARS y USD en un solo total.</span>
+                <button type="button" class="btn-retry" (click)="loadBlueRate()">Reintentar</button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="table-wrap grow">
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Nombre</th>
+                <th class="right">Cant.</th>
+                <th class="right">Precio</th>
+                <th class="right">Valor ({{ invViewCurrency() }})</th>
+                <th class="right">Resultado ({{ invViewCurrency() }})</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (inv of rows(); track inv.ticker) {
+                <tr>
+                  <td class="mono bold">{{ inv.ticker }}</td>
+                  <td class="muted">{{ inv.name }}</td>
+                  <td class="right mono">{{ inv.qty }}</td>
+                  <td class="right mono">{{ inv.price | currencyFormat: inv.currency }}</td>
+                  <td class="right mono">{{ inv.viewValue | currencyFormat: invViewCurrency() }}</td>
+                  <td class="right mono" [class.income]="inv.viewResult >= 0" [class.expense]="inv.viewResult < 0">{{ inv.viewResult | currencyFormat: invViewCurrency() }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  } @else if (tab() === 'savings') {
+    <section class="tab-body">
+      <div class="savings-cards">
+        <div class="stat-card accent-card">
+          <div class="card-title">Total ahorrado ({{ invViewCurrency() }})</div>
+          <div class="card-value big mono">
+            {{ savingsTotal() === null ? '—' : (savingsTotal() | currencyFormat: invViewCurrency()) }}
+          </div>
+          <div class="card-foot">{{ savings().length }} {{ savings().length === 1 ? 'registro' : 'registros' }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="card-title">En el banco</div>
+          <div class="card-value mono">{{ bankTotal() === null ? '—' : (bankTotal() | currencyFormat: invViewCurrency()) }}</div>
+          <div class="card-foot">{{ bankSavings().length }} {{ bankSavings().length === 1 ? 'cuenta' : 'cuentas' }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="card-title">Efectivo</div>
+          <div class="card-value mono">{{ cashTotal() === null ? '—' : (cashTotal() | currencyFormat: invViewCurrency()) }}</div>
+          <div class="card-foot">{{ cashSavings().length }} {{ cashSavings().length === 1 ? 'registro' : 'registros' }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="card-title">Por moneda</div>
+          <div class="card-lines">
+            <div class="line"><span class="muted">ARS</span><span class="mono">{{ savingsArsTotal() | currencyFormat: 'ARS' }}</span></div>
+            <div class="line"><span class="muted">USD</span><span class="mono">{{ savingsUsdTotal() | currencyFormat: 'USD' }}</span></div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-}
+
+      <div class="savings-grid grow">
+        <div class="list-panel">
+          @if (savings().length === 0) {
+            <div class="empty-state grow">
+              <div class="empty-title">Todavía no registraste ahorros</div>
+              <div class="empty-sub">Cargá tus cuentas bancarias y tu efectivo para que entren en el patrimonio.</div>
+            </div>
+          }
+
+          @for (group of savingGroups(); track group.title) {
+            @if (group.items.length > 0) {
+              <div class="sav-group">
+                <div class="sav-group-head">
+                  <span class="sav-group-title">{{ group.title }}</span>
+                  <span class="sav-group-count">{{ group.items.length }}</span>
+                </div>
+
+                @for (sav of group.items; track sav.id) {
+                  <div class="sav-row">
+                    @if (editingSavId() !== sav.id) {
+                      <div class="sav-view">
+                        <span class="sav-badge" [class.bank]="sav.kind === 'BANK'" [class.cash]="sav.kind === 'CASH'">{{ sav.currency }}</span>
+                        <div class="sav-main">
+                          <div class="sav-label">{{ sav.label }}</div>
+                        </div>
+                        <div class="sav-amounts">
+                          <span class="mono sav-amount">{{ sav.amount | currencyFormat: sav.currency }}</span>
+                          @if (sav.currency !== invViewCurrency() && rateReady()) {
+                            <span class="mono sav-converted">≈ {{ (sav.currency === 'USD' ? sav.amount * (blueRate() ?? 0) : sav.amount / (blueRate() ?? 1)) | currencyFormat: invViewCurrency() }}</span>
+                          }
+                        </div>
+                        <div class="sav-actions">
+                          <button type="button" class="btn-edit" (click)="startEditSav(sav)">Editar</button>
+                          <button type="button" class="btn-delete" (click)="deleteSaving(sav.id)">Borrar</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="sav-edit">
+                        <input [ngModel]="draftSavName()" (ngModelChange)="draftSavName.set($event)" />
+                        <input type="number" class="mono narrow" [ngModel]="draftSavAmount()" (ngModelChange)="draftSavAmount.set($event)" />
+                        <select [ngModel]="draftSavCurrency()" (ngModelChange)="draftSavCurrency.set($event)">
+                          <option value="ARS">ARS</option>
+                          <option value="USD">USD</option>
+                        </select>
+                        <select [ngModel]="draftSavKind()" (ngModelChange)="draftSavKind.set($event)">
+                          <option value="BANK">Banco</option>
+                          <option value="CASH">Efectivo</option>
+                        </select>
+                        <button type="button" class="btn-save" (click)="saveEditSav()">Guardar</button>
+                        <button type="button" class="btn-cancel" (click)="cancelEditSav()">Cancelar</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <div class="new-sav-panel">
+          <div class="card-title panel-title">Nuevo ahorro</div>
+          <div class="panel-form">
+            <label class="field">
+              <span class="field-label">Nombre</span>
+              <input placeholder="ej. Caja de ahorro Galicia" [ngModel]="newSavName()" (ngModelChange)="newSavName.set($event)" (keyup.enter)="addSaving()" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Monto</span>
+              <input type="number" placeholder="0" [ngModel]="newSavAmount()" (ngModelChange)="newSavAmount.set($event)" (keyup.enter)="addSaving()" />
+            </label>
+
+            <div class="field">
+              <span class="field-label">Moneda</span>
+              <div class="seg-toggle">
+                <button type="button" class="pill sm mono" [class.active]="newSavCurrency() === 'ARS'" (click)="newSavCurrency.set('ARS')">ARS</button>
+                <button type="button" class="pill sm mono" [class.active]="newSavCurrency() === 'USD'" (click)="newSavCurrency.set('USD')">USD</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Dónde está</span>
+              <div class="seg-toggle">
+                <button type="button" class="pill sm" [class.active]="newSavKind() === 'BANK'" (click)="newSavKind.set('BANK')">Banco</button>
+                <button type="button" class="pill sm" [class.active]="newSavKind() === 'CASH'" (click)="newSavKind.set('CASH')">Efectivo</button>
+              </div>
+            </div>
+
+            <button type="button" class="btn-add" [disabled]="!newSavName().trim()" (click)="addSaving()">+ Agregar ahorro</button>
+            <div class="panel-hint">Se guardan en este navegador. Todavía no hay backend de ahorros.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <section class="tab-body">
+      @if (netWorthBuckets(); as buckets) {
+        <div class="networth-grid grow">
+          <div class="networth-hero">
+            <div class="card-title">Patrimonio total</div>
+            <div class="networth-value mono">{{ netWorth() | currencyFormat: invViewCurrency() }}</div>
+            @if (blueRate(); as rate) {
+              <div class="networth-rate mono">Consolidado al blue {{ rate | currencyFormat: 'ARS' }}</div>
+            }
+
+            <div class="comp-bar tall">
+              @for (b of buckets; track b.label) {
+                <span class="seg" [class.inv]="b.label === 'Inversiones'" [class.bank]="b.label === 'Banco'" [class.cash]="b.label === 'Efectivo'" [style.width.%]="b.pct"></span>
+              }
+            </div>
+
+            <div class="networth-rows">
+              @for (b of buckets; track b.label) {
+                <div class="nw-row">
+                  <span class="nw-dot" [class.inv]="b.label === 'Inversiones'" [class.bank]="b.label === 'Banco'" [class.cash]="b.label === 'Efectivo'"></span>
+                  <span class="nw-label">{{ b.label }}</span>
+                  <span class="nw-pct mono">{{ b.pct | number: '1.0-0' }}%</span>
+                  <span class="nw-value mono">{{ b.value | currencyFormat: invViewCurrency() }}</span>
+                </div>
+              }
+            </div>
+
+            @if (!iolConnected()) {
+              <div class="networth-note">Sin IOL conectado las inversiones cuentan como 0. Conectate en la pestaña Inversiones para sumarlas.</div>
+            }
+          </div>
+
+          <div class="alloc-card">
+            <div class="card-head-row">
+              <span class="chart-title">Composición</span>
+            </div>
+            <div class="alloc-body">
+              <app-donut-chart
+                [slices]="netWorthSlices()"
+                [currency]="invViewCurrency()"
+                centerLabel="Patrimonio"
+              />
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="rate-missing-card grow">
+          <div>No se pudo traer la cotización del dólar blue, así que no se puede consolidar ARS y USD en un patrimonio único.</div>
+          <button type="button" class="btn-retry" (click)="loadBlueRate()">Reintentar</button>
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -116,10 +116,6 @@
 }
 
 .user-chip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -128,56 +124,50 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block;
 }
 
-.logout-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 11.5px;
+/* Fila de acciones rapidas: tema, modo privado, salir. Iconos en vez de switches con
+   label para que la sidebar quede mas compacta. */
+.icon-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--divider);
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.logout-btn:hover {
+.icon-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Modo privado activo: se destaca a proposito, es el estado que importa notar de un vistazo. */
+.icon-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.icon-btn.logout {
+  margin-left: auto;
+}
+
+.icon-btn.logout:hover {
   color: var(--expense);
-}
-
-.theme-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.theme-label {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-
-.theme-toggle {
-  width: 42px;
-  height: 24px;
-  border-radius: 12px;
-  border: 1px solid var(--divider);
-  background: var(--bg);
-  position: relative;
-  cursor: pointer;
-  padding: 0;
-}
-
-.theme-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--accent);
-  transition: left 0.15s;
-}
-
-.theme-knob.on {
-  left: 20px;
+  border-color: var(--expense-border);
 }
 
 .main {
@@ -188,11 +178,16 @@
   flex-direction: column;
 }
 
+/* Columna flex para que la pagina ruteada pueda estirarse al alto disponible
+   (min-height: 100% en su :host) en vez de quedar pegada arriba. */
 .content {
   flex: 1;
   min-height: 0;
   padding: 28px;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 @media (max-width: 860px) {

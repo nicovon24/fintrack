@@ -5,12 +5,11 @@ import { DolarBlueService } from '../../core/services/dolar-blue.service';
 import { CategoryResponse } from '../../core/models/category.model';
 import { Currency, TransactionResponse, TransactionType } from '../../core/models/transaction.model';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { DonutChart, DonutSlice } from '../../shared/components/donut-chart/donut-chart';
 import { PeriodChange, PeriodFilter } from '../../shared/components/period-filter/period-filter';
 import { CategoriesService } from '../categories/categories.service';
 import { TransactionFilters, TransactionsService } from '../transactions/transactions.service';
 import { DashboardService } from './dashboard.service';
-
-const PALETTE = ['#7c9cf0', '#f0b46b', '#7fd1ae', '#e18ba0', '#8fd3e8', '#c9a6f0', '#e08f6b', '#9ad17f'];
 
 function currentMonthFilters(): TransactionFilters {
   const now = new Date();
@@ -19,16 +18,14 @@ function currentMonthFilters(): TransactionFilters {
 
 interface BreakdownItem {
   name: string;
-  color: string;
   amount: number;
   count: number;
-  pct: number;
 }
 
 // Resumen mensual: totales por moneda + combinado ARS + breakdown por categoria.
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, CurrencyFormatPipe, PeriodFilter],
+  imports: [FormsModule, CurrencyFormatPipe, PeriodFilter, DonutChart],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -107,15 +104,12 @@ export class Dashboard {
       entry.count += 1;
       byCategory.set(key, entry);
     }
-    const totalArs = [...byCategory.values()].reduce((sum, v) => sum + v.amountArs, 0);
     return [...byCategory.entries()]
       .sort((a, b) => b[1].amountArs - a[1].amountArs)
-      .map(([name, v], i) => ({
+      .map(([name, v]) => ({
         name,
-        color: PALETTE[i % PALETTE.length],
         amount: this.toDisplay(v.amountArs),
-        count: v.count,
-        pct: totalArs > 0 ? Math.round((v.amountArs / totalArs) * 100) : 0
+        count: v.count
       }));
   });
 
@@ -123,20 +117,14 @@ export class Dashboard {
     this.breakdown().reduce((sum, b) => sum + b.amount, 0)
   );
 
-  protected readonly breakdownCategoryCount = computed(() => this.breakdown().length);
-
-  protected readonly categoryGaugeGradient = computed(() => {
-    const items = this.breakdown();
-    if (items.length === 0) return this.cssVar('--divider');
-    let acc = 0;
-    const stops: string[] = [];
-    for (const item of items) {
-      const start = acc;
-      acc += item.pct;
-      stops.push(`${item.color} ${start}% ${acc}%`);
-    }
-    return stops.join(', ');
-  });
+  // El donut compartido resuelve colores, plegado en "Otros", tooltip y toggles.
+  protected readonly breakdownSlices = computed<DonutSlice[]>(() =>
+    this.breakdown().map((b) => ({
+      label: b.name,
+      value: b.amount,
+      meta: `${b.count} mov.`
+    }))
+  );
 
   // Quick add
   protected readonly showQuickAdd = signal(false);
@@ -271,7 +259,4 @@ export class Dashboard {
     return amountArs;
   }
 
-  private cssVar(name: string): string {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
 }

@@ -22,6 +22,18 @@ html[data-theme='dark'] {
   --warn-border: rgba(240, 180, 107, 0.35);
   --warn-icon-bg: rgba(240, 180, 107, 0.18);
   --warn-text: #d9a05a;
+
+  /* Paleta categorica para graficos. Orden fijo (nunca ciclado): el orden es el mecanismo
+     de seguridad para daltonismo, validado contra la superficie de las cards. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #6b7c8f;
 }
 
 html[data-theme='light'] {
@@ -45,6 +57,17 @@ html[data-theme='light'] {
   --warn-border: rgba(185, 121, 31, 0.3);
   --warn-icon-bg: rgba(185, 121, 31, 0.15);
   --warn-text: #93611a;
+
+  /* Mismos ocho tonos, escalonados para la superficie clara (no es un flip automatico). */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-other: #8b9aab;
 }
 
 * {

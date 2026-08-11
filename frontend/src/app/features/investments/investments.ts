@@ -1,110 +1,216 @@
-import { Component, computed, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { IolHolding } from '../../core/models/iol.model';
 import { Currency } from '../../core/models/transaction.model';
+import { DolarBlueService } from '../../core/services/dolar-blue.service';
+import { IolService } from '../../core/services/iol.service';
+import { DonutChart, DonutSlice } from '../../shared/components/donut-chart/donut-chart';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
-import { Investment, Saving } from './investments.model';
+import { Saving, SavingKind } from './investments.model';
 
-const PALETTE = ['#7c9cf0', '#f0b46b', '#7fd1ae', '#e18ba0', '#8fd3e8'];
-const EVOLUTION_MONTHS = ['mar', 'abr', 'may', 'jun', 'jul', 'ago'];
-const EVOLUTION_ARS = [820000, 860000, 910000, 940000, 990000, 1040000];
+type Tab = 'portfolio' | 'savings' | 'networth';
 
-// Sin backend todavia (roadmap item 4) - estado local en memoria, no persiste entre sesiones.
+// Ahorros cargados a mano: no hay entidad en backend, asi que viven en localStorage del navegador.
+// Son datos propios del usuario, no de IOL: persistirlos no toca la regla de docs/specs/07.
+const SAVINGS_KEY = 'fintrack.savings';
+
+// Fila de la tabla ya expresada en la moneda de vista (el precio unitario queda en su moneda
+// original: convertir la cotizacion de un CEDEAR a USD no le dice nada a nadie).
+interface HoldingRow extends IolHolding {
+  viewValue: number;
+  viewResult: number;
+}
+
+interface NetWorthBucket {
+  label: string;
+  value: number;
+  pct: number;
+}
+
+function loadSavings(): Saving[] {
+  try {
+    const raw = localStorage.getItem(SAVINGS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Partial<Saving>[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((s) => typeof s?.id === 'string' && typeof s?.label === 'string')
+      .map((s) => ({
+        id: s.id as string,
+        label: s.label as string,
+        amount: Number(s.amount) || 0,
+        currency: s.currency === 'USD' ? 'USD' : 'ARS',
+        kind: s.kind === 'BANK' ? 'BANK' : 'CASH'
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// Portfolio: tenencias reales de IOL, en vivo, sin persistir nada (ver docs/specs/07).
 @Component({
   selector: 'app-investments',
-  imports: [FormsModule, CurrencyFormatPipe],
+  imports: [FormsModule, CurrencyFormatPipe, DecimalPipe, DonutChart],
   templateUrl: './investments.html',
   styleUrl: './investments.scss'
 })
 export class Investments {
-  protected readonly tab = signal<'portfolio' | 'savings'>('portfolio');
-  protected readonly iolConnected = signal(false);
+  private readonly iolService = inject(IolService);
+  private readonly dolarBlueService = inject(DolarBlueService);
+
+  protected readonly tab = signal<Tab>('portfolio');
   protected readonly invViewCurrency = signal<Currency>('ARS');
 
-  protected readonly investments = signal<Investment[]>([
-    { id: 'i1', ticker: 'AL30', name: 'Bono AL30', qty: 200, avgCost: 780, price: 845, currency: 'ARS' },
-    { id: 'i2', ticker: 'GGAL', name: 'Grupo Galicia', qty: 80, avgCost: 4100, price: 4480, currency: 'ARS' },
-    { id: 'i3', ticker: 'PAMP', name: 'Pampa Energía', qty: 150, avgCost: 1850, price: 1790, currency: 'ARS' },
-    { id: 'i4', ticker: 'AL30D', name: 'Bono AL30D', qty: 100, avgCost: 62, price: 68, currency: 'USD' },
-    { id: 'i5', ticker: 'GD30', name: 'Bono GD30', qty: 50, avgCost: 58, price: 55, currency: 'USD' }
-  ]);
+  protected readonly iolConnected = this.iolService.connected;
+  protected readonly showIolLoginModal = signal(false);
+  protected readonly iolUsername = signal('');
+  protected readonly iolPassword = signal('');
+  protected readonly iolLoginSubmitting = signal(false);
+  protected readonly iolLoginError = signal<string | null>(null);
+  protected readonly iolLoading = signal(false);
+  protected readonly iolLoadError = signal<string | null>(null);
 
-  protected readonly savings = signal<Saving[]>([
-    { id: 's1', label: 'Efectivo en casa', amount: 2000, currency: 'USD' },
-    { id: 's2', label: 'Caja de ahorro', amount: 180000, currency: 'ARS' }
-  ]);
+  protected readonly investments = signal<IolHolding[]>([]);
+  protected readonly cashArs = signal(0);
+  protected readonly cashUsd = signal(0);
 
-  protected readonly editingInvId = signal<string | null>(null);
-  protected readonly deleteConfirmInvId = signal<string | null>(null);
-  protected readonly draftInvQty = signal('');
-  protected readonly draftInvPrice = signal('');
+  protected readonly savings = signal<Saving[]>(loadSavings());
 
   protected readonly editingSavId = signal<string | null>(null);
   protected readonly draftSavName = signal('');
   protected readonly draftSavAmount = signal('');
   protected readonly draftSavCurrency = signal<Currency>('ARS');
+  protected readonly draftSavKind = signal<SavingKind>('BANK');
   protected readonly newSavName = signal('');
   protected readonly newSavAmount = signal('');
   protected readonly newSavCurrency = signal<Currency>('USD');
+  protected readonly newSavKind = signal<SavingKind>('BANK');
 
-  protected readonly evolutionMonths = EVOLUTION_MONTHS;
+  // Cotizacion del blue para consolidar ARS + USD en un unico numero.
+  protected readonly blueRate = signal<number | null>(null);
+
+  constructor() {
+    this.loadBlueRate();
+    if (this.iolConnected()) {
+      this.loadIolPortfolio();
+    }
+
+    effect(() => {
+      const list = this.savings();
+      try {
+        localStorage.setItem(SAVINGS_KEY, JSON.stringify(list));
+      } catch {
+        // Sin localStorage (modo privado, cuota llena) los ahorros siguen andando en memoria.
+      }
+    });
+  }
+
+  loadBlueRate(): void {
+    this.dolarBlueService.getQuote().subscribe({
+      next: (quote) => this.blueRate.set(quote.venta),
+      error: () => this.blueRate.set(null)
+    });
+  }
 
   private byCurrency(currency: Currency) {
     return this.investments().filter((i) => i.currency === currency);
   }
 
-  protected readonly arsValue = computed(() => this.byCurrency('ARS').reduce((s, i) => s + i.qty * i.price, 0));
-  protected readonly arsCost = computed(() => this.byCurrency('ARS').reduce((s, i) => s + i.qty * i.avgCost, 0));
-  protected readonly arsResult = computed(() => this.arsValue() - this.arsCost());
+  // value/cost/result ya vienen calculados del backend a partir de los totales de IOL. No se
+  // recalculan aca con qty * precio unitario porque los bonos cotizan cada 100 nominales.
+  protected readonly arsHoldingsValue = computed(() => this.byCurrency('ARS').reduce((s, i) => s + i.value, 0));
+  private readonly arsCost = computed(() => this.byCurrency('ARS').reduce((s, i) => s + i.cost, 0));
+  protected readonly arsResult = computed(() => this.arsHoldingsValue() - this.arsCost());
 
-  protected readonly usdValue = computed(() => this.byCurrency('USD').reduce((s, i) => s + i.qty * i.price, 0));
-  protected readonly usdCost = computed(() => this.byCurrency('USD').reduce((s, i) => s + i.qty * i.avgCost, 0));
-  protected readonly usdResult = computed(() => this.usdValue() - this.usdCost());
+  protected readonly usdHoldingsValue = computed(() => this.byCurrency('USD').reduce((s, i) => s + i.value, 0));
+  private readonly usdCost = computed(() => this.byCurrency('USD').reduce((s, i) => s + i.cost, 0));
+  protected readonly usdResult = computed(() => this.usdHoldingsValue() - this.usdCost());
 
-  protected readonly investmentsEnriched = computed(() =>
-    this.investments().map((inv) => ({
-      ...inv,
-      value: inv.qty * inv.price,
-      result: inv.qty * (inv.price - inv.avgCost)
+  // Total valorizado = titulos + efectivo disponible, igual que el total que muestra IOL en pantalla.
+  protected readonly arsValue = computed(() => this.arsHoldingsValue() + this.cashArs());
+  protected readonly usdValue = computed(() => this.usdHoldingsValue() + this.cashUsd());
+
+  // Variacion porcentual sobre lo invertido (el efectivo no entra: no tiene precio de compra).
+  protected readonly arsResultPct = computed(() =>
+    this.arsCost() > 0 ? (this.arsResult() / this.arsCost()) * 100 : 0
+  );
+  protected readonly usdResultPct = computed(() =>
+    this.usdCost() > 0 ? (this.usdResult() / this.usdCost()) * 100 : 0
+  );
+
+  // --- Conversion a la moneda de vista ---
+  // El toggle ARS/USD es global: convierte toda la cartera, no filtra por moneda. Si la API de
+  // cotizacion no responde no inventamos un tipo de cambio: devolvemos null y la pantalla cae
+  // al modo anterior (cada moneda por separado).
+  protected readonly rateReady = computed(() => this.blueRate() !== null);
+
+  private toView(value: number, from: Currency): number | null {
+    const to = this.invViewCurrency();
+    if (from === to) return value;
+    const rate = this.blueRate();
+    if (!rate) return null;
+    return from === 'USD' ? value * rate : value / rate;
+  }
+
+  private combine(ars: number, usd: number): number | null {
+    const a = this.toView(ars, 'ARS');
+    const u = this.toView(usd, 'USD');
+    return a === null || u === null ? null : a + u;
+  }
+
+  // --- Patrimonio consolidado ---
+
+  protected readonly totalValue = computed(() => this.combine(this.arsValue(), this.usdValue()));
+  private readonly totalCost = computed(() => this.combine(this.arsCost(), this.usdCost()));
+  protected readonly totalResult = computed(() => this.combine(this.arsResult(), this.usdResult()));
+
+  protected readonly totalResultPct = computed(() => {
+    const cost = this.totalCost();
+    const result = this.totalResult();
+    return cost && cost > 0 && result !== null ? (result / cost) * 100 : 0;
+  });
+
+  // Los dos sumandos del total, ya convertidos: la card muestra de donde sale el numero grande.
+  protected readonly arsValueInView = computed(() => this.toView(this.arsValue(), 'ARS'));
+  protected readonly usdValueInView = computed(() => this.toView(this.usdValue(), 'USD'));
+
+  // Cuanto de la cartera esta dolarizado. Dato real, sin historico.
+  protected readonly composition = computed(() => {
+    const total = this.totalValue();
+    const ars = this.arsValueInView();
+    if (total === null || ars === null || total <= 0) return null;
+    const arsPct = Math.min(Math.max((ars / total) * 100, 0), 100);
+    return { arsPct, usdPct: 100 - arsPct };
+  });
+
+  // Sin cotizacion no se puede mezclar monedas: donut y tabla vuelven a filtrar por la moneda elegida.
+  private readonly viewHoldings = computed(() =>
+    this.rateReady() ? this.investments() : this.byCurrency(this.invViewCurrency())
+  );
+
+  protected readonly rows = computed<HoldingRow[]>(() =>
+    this.viewHoldings().map((item) => ({
+      ...item,
+      viewValue: this.toView(item.value, item.currency) ?? item.value,
+      viewResult: this.toView(item.result, item.currency) ?? item.result
     }))
   );
 
-  protected readonly portfolioTotalArs = computed(() => this.arsValue());
-
-  protected readonly portfolioSlices = computed(() => {
-    const items = this.investmentsEnriched().filter((i) => i.currency === this.invViewCurrency());
-    const total = items.reduce((s, i) => s + i.value, 0);
-    let acc = 0;
-    return items.map((item, idx) => {
-      const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
-      const start = acc;
-      acc += pct;
-      return { ticker: item.ticker, pct, color: PALETTE[idx % PALETTE.length], start, end: acc };
-    });
-  });
-
-  protected readonly portfolioGaugeGradient = computed(() =>
-    this.portfolioSlices()
-      .map((s) => `${s.color} ${s.start}% ${s.end}%`)
-      .join(', ')
+  // Distribucion de cartera: el donut compartido se encarga de colores, plegado en "Otros",
+  // tooltip y toggles.
+  protected readonly allocationSlices = computed<DonutSlice[]>(() =>
+    this.rows().map((item) => ({
+      label: item.ticker,
+      value: item.viewValue
+    }))
   );
 
-  protected readonly portfolioTotalLabel = computed(() =>
-    this.invViewCurrency() === 'ARS' ? this.arsValue() : this.usdValue()
-  );
+  // --- Ahorros ---
 
-  protected readonly evolutionPoints = computed(() => {
-    const max = Math.max(...EVOLUTION_ARS);
-    const min = Math.min(...EVOLUTION_ARS);
-    const range = max - min || 1;
-    return EVOLUTION_ARS.map((v, i) => {
-      const x = (i / (EVOLUTION_ARS.length - 1)) * 300;
-      const y = 110 - ((v - min) / range) * 100;
-      return `${x},${y}`;
-    }).join(' ');
-  });
-
-  protected readonly evolutionAreaPoints = computed(() => `0,120 ${this.evolutionPoints()} 300,120`);
+  protected readonly bankSavings = computed(() => this.savings().filter((s) => s.kind === 'BANK'));
+  protected readonly cashSavings = computed(() => this.savings().filter((s) => s.kind === 'CASH'));
 
   protected readonly savingsArsTotal = computed(() =>
     this.savings()
@@ -118,52 +224,136 @@ export class Investments {
       .reduce((sum, s) => sum + s.amount, 0)
   );
 
-  setTab(tab: 'portfolio' | 'savings'): void {
-    this.tab.set(tab);
+  // Una sola moneda mezclada necesita cotizacion. Lista vacia da 0, no null: cero es cero en
+  // cualquier moneda.
+  private sumInView(list: Saving[]): number | null {
+    let total = 0;
+    for (const sav of list) {
+      const value = this.toView(sav.amount, sav.currency);
+      if (value === null) return null;
+      total += value;
+    }
+    return total;
   }
 
-  toggleIol(): void {
-    this.iolConnected.update((v) => !v);
+  protected readonly savingGroups = computed(() => [
+    { title: 'Banco', items: this.bankSavings() },
+    { title: 'Efectivo', items: this.cashSavings() }
+  ]);
+
+  protected readonly bankTotal = computed(() => this.sumInView(this.bankSavings()));
+  protected readonly cashTotal = computed(() => this.sumInView(this.cashSavings()));
+  protected readonly savingsTotal = computed(() => this.sumInView(this.savings()));
+
+  // --- Patrimonio ---
+  // Tres bloques: cartera de IOL (titulos + efectivo en el broker), plata en el banco y efectivo.
+  // Sin IOL conectado el bloque de inversiones vale 0 y el patrimonio sigue teniendo sentido.
+
+  protected readonly investmentsTotal = computed(() =>
+    this.iolConnected() ? this.totalValue() : 0
+  );
+
+  protected readonly netWorth = computed(() => {
+    const parts = [this.investmentsTotal(), this.bankTotal(), this.cashTotal()];
+    return parts.some((p) => p === null) ? null : parts.reduce((sum, p) => sum! + p!, 0);
+  });
+
+  protected readonly netWorthBuckets = computed<NetWorthBucket[] | null>(() => {
+    const total = this.netWorth();
+    if (total === null) return null;
+    const parts: [string, number][] = [
+      ['Inversiones', this.investmentsTotal() ?? 0],
+      ['Banco', this.bankTotal() ?? 0],
+      ['Efectivo', this.cashTotal() ?? 0]
+    ];
+    return parts.map(([label, value]) => ({
+      label,
+      value,
+      pct: total > 0 ? (value / total) * 100 : 0
+    }));
+  });
+
+  protected readonly netWorthSlices = computed<DonutSlice[]>(() =>
+    (this.netWorthBuckets() ?? []).map((b) => ({ label: b.label, value: b.value }))
+  );
+
+  setTab(tab: Tab): void {
+    this.tab.set(tab);
   }
 
   setInvViewCurrency(c: Currency): void {
     this.invViewCurrency.set(c);
   }
 
-  startEditInv(inv: Investment): void {
-    this.editingInvId.set(inv.id);
-    this.draftInvQty.set(String(inv.qty));
-    this.draftInvPrice.set(String(inv.price));
-    this.deleteConfirmInvId.set(null);
+  openIolLogin(): void {
+    this.iolLoginError.set(null);
+    this.iolUsername.set('');
+    this.iolPassword.set('');
+    this.showIolLoginModal.set(true);
   }
 
-  cancelEditInv(): void {
-    this.editingInvId.set(null);
+  closeIolLogin(): void {
+    this.showIolLoginModal.set(false);
   }
 
-  saveEditInv(): void {
-    const id = this.editingInvId();
-    this.investments.update((list) =>
-      list.map((i) =>
-        i.id === id
-          ? { ...i, qty: Number(this.draftInvQty()) || i.qty, price: Number(this.draftInvPrice()) || i.price }
-          : i
-      )
-    );
-    this.editingInvId.set(null);
+  async submitIolLogin(): Promise<void> {
+    const username = this.iolUsername();
+    const password = this.iolPassword();
+    if (!username || !password) return;
+
+    this.iolLoginSubmitting.set(true);
+    this.iolLoginError.set(null);
+    try {
+      await this.iolService.login(username, password);
+      this.iolPassword.set('');
+      this.showIolLoginModal.set(false);
+      await this.loadIolPortfolio();
+    } catch (err) {
+      const e = err as { status?: number; error?: { error?: string; messages?: string[] } };
+      if (e.status === 401 && e.error?.error !== 'IOL Error') {
+        this.iolLoginError.set('Tu sesión de fintrack venció. Cerrá sesión y volvé a entrar antes de conectar IOL.');
+      } else {
+        const detail = e.error?.messages?.join(' — ');
+        this.iolLoginError.set(detail ?? `No se pudo conectar con IOL (error ${e.status ?? '?'}).`);
+      }
+    } finally {
+      this.iolLoginSubmitting.set(false);
+    }
   }
 
-  requestDeleteInv(id: string): void {
-    this.deleteConfirmInvId.set(id);
+  disconnectIol(): void {
+    this.iolService.disconnect();
+    this.investments.set([]);
+    this.cashArs.set(0);
+    this.cashUsd.set(0);
+    this.iolLoadError.set(null);
   }
 
-  cancelDeleteInv(): void {
-    this.deleteConfirmInvId.set(null);
-  }
+  async loadIolPortfolio(): Promise<void> {
+    this.iolLoading.set(true);
+    this.iolLoadError.set(null);
+    this.iolService.getPortfolio().subscribe({
+      next: (res) => {
+        this.investments.set(res.holdings);
+        this.cashArs.set(res.cashArs ?? 0);
+        this.cashUsd.set(res.cashUsd ?? 0);
+        this.iolLoading.set(false);
+      },
+      error: (err: { status?: number; error?: { error?: string; messages?: string[] } }) => {
+        this.iolLoading.set(false);
+        const isIolError = err.error?.error === 'IOL Error';
+        const detail = err.error?.messages?.join(' — ');
 
-  confirmDeleteInv(id: string): void {
-    this.investments.update((list) => list.filter((i) => i.id !== id));
-    this.deleteConfirmInvId.set(null);
+        if (err.status === 401 && isIolError) {
+          this.iolService.disconnect();
+          this.iolLoadError.set('Tu sesión de IOL venció. Volvé a conectarte.');
+        } else if (err.status === 401) {
+          this.iolLoadError.set('Tu sesión de fintrack venció. Cerrá sesión y volvé a entrar.');
+        } else {
+          this.iolLoadError.set(detail ?? `No se pudo cargar la cartera de IOL (error ${err.status ?? '?'}).`);
+        }
+      }
+    });
   }
 
   startEditSav(sav: Saving): void {
@@ -171,6 +361,7 @@ export class Investments {
     this.draftSavName.set(sav.label);
     this.draftSavAmount.set(String(sav.amount));
     this.draftSavCurrency.set(sav.currency);
+    this.draftSavKind.set(sav.kind);
   }
 
   cancelEditSav(): void {
@@ -186,7 +377,8 @@ export class Investments {
               ...s,
               label: this.draftSavName() || s.label,
               amount: Number(this.draftSavAmount()) || s.amount,
-              currency: this.draftSavCurrency()
+              currency: this.draftSavCurrency(),
+              kind: this.draftSavKind()
             }
           : s
       )
@@ -207,7 +399,8 @@ export class Investments {
         id: 's' + Date.now(),
         label: name,
         amount: Number(this.newSavAmount()) || 0,
-        currency: this.newSavCurrency()
+        currency: this.newSavCurrency(),
+        kind: this.newSavKind()
       }
     ]);
     this.newSavName.set('');

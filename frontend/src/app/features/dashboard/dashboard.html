@@ -1,3 +1,4 @@
+<div class="page">
 <div class="dash-header">
   <app-period-filter (changed)="onPeriodChange($event)" />
   <div class="header-actions">
@@ -44,14 +45,13 @@
   </div>
 }
 
-<div class="stat-cards">
+<div class="summary-row">
   <div class="stat-card total-card">
     <div class="card-head">
-      <span class="icon">⇄</span>
-      <span class="card-title">Balance total combinado</span>
+      <span class="card-title">Balance combinado</span>
       <div class="currency-toggle">
-        <button type="button" class="pill mono" [class.active]="viewCurrency() === 'ARS'" (click)="setViewCurrency('ARS')">ARS</button>
-        <button type="button" class="pill mono" [class.active]="viewCurrency() === 'USD'" (click)="setViewCurrency('USD')">USD</button>
+        <button type="button" class="pill sm mono" [class.active]="viewCurrency() === 'ARS'" (click)="setViewCurrency('ARS')">ARS</button>
+        <button type="button" class="pill sm mono" [class.active]="viewCurrency() === 'USD'" (click)="setViewCurrency('USD')">USD</button>
       </div>
     </div>
     <div class="card-lines">
@@ -61,87 +61,14 @@
       <div class="line total"><span>Balance</span><span class="mono" [class.income]="totalBalanceDisplay() >= 0" [class.expense]="totalBalanceDisplay() < 0">{{ totalBalanceDisplay() | currencyFormat: viewCurrency() }}</span></div>
     </div>
     <div class="combined-note">
-      Pesos + dólares pesificados{{ blueRate() ? ' a $' + blueRate()!.toFixed(0) + ' (dólar blue)' : (avgUsdRate() ? ' a $' + avgUsdRate()!.toFixed(0) : '') }}, sumados en un único total.
+      ARS + USD pesificados{{ blueRate() ? ' al blue $' + blueRate()!.toFixed(0) : (avgUsdRate() ? ' a $' + avgUsdRate()!.toFixed(0) : '') }}.
     </div>
   </div>
-</div>
 
-<div class="dash-grid">
-  <div class="breakdown-card">
-    <div class="breakdown-header">
-      <span class="card-title">Gastos por categoría (combinado, en {{ viewCurrency() }})</span>
-      <div class="toggles">
-        <button type="button" class="pill" [class.active]="dashType() === 'EXPENSE'" (click)="setDashType('EXPENSE')">Gastos</button>
-        <button type="button" class="pill" [class.active]="dashType() === 'INCOME'" (click)="setDashType('INCOME')">Ingresos</button>
-      </div>
-    </div>
-
-    <div class="net-row">
-      <div class="net-item"><span>Gastos</span><span class="mono expense">{{ totalExpenseDisplay() | currencyFormat: viewCurrency() }}</span></div>
-      <div class="net-item"><span>Ingresos</span><span class="mono income">{{ totalIncomeDisplay() | currencyFormat: viewCurrency() }}</span></div>
-      <div class="net-item net-total"><span>Neto</span><span class="mono" [class.income]="totalBalanceDisplay() >= 0" [class.expense]="totalBalanceDisplay() < 0">{{ totalBalanceDisplay() | currencyFormat: viewCurrency() }}</span></div>
-    </div>
-
-    @if (breakdown().length > 0) {
-      <div class="breakdown-body">
-        <div class="gauge" [style.background]="'conic-gradient(' + categoryGaugeGradient() + ')'">
-          <div class="gauge-inner">
-            <span class="gauge-label">Total {{ dashType() === 'EXPENSE' ? 'gastado' : 'ingresado' }}</span>
-            <span class="gauge-value mono">{{ breakdownTotal() | currencyFormat: viewCurrency() }}</span>
-            <span class="gauge-sub">{{ breakdownCategoryCount() }} categorías · {{ periodLabel() }}</span>
-          </div>
-        </div>
-        <div class="breakdown-list">
-          @for (b of breakdown(); track b.name) {
-            <div class="breakdown-item">
-              <div class="item-row">
-                <div class="item-label">
-                  <span class="dot" [style.background]="b.color"></span>
-                  <span>{{ b.name }}</span>
-                  <span class="muted">{{ b.count }} mov.</span>
-                </div>
-                <span class="mono">{{ b.amount | currencyFormat: viewCurrency() }} <span class="muted">· {{ b.pct }}%</span></span>
-              </div>
-              <div class="bar-track">
-                <div class="bar-fill" [style.width.%]="b.pct" [style.background]="b.color"></div>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    } @else {
-      <div class="empty-state">No hay movimientos de este tipo en {{ periodLabel() }}.</div>
-    }
-  </div>
-
-  <div class="side-col">
-    <div class="side-card">
-      <div class="card-title">Últimos movimientos (en {{ viewCurrency() }})</div>
-      <div class="recent-list">
-        @for (r of recentTxDisplay(); track r.id) {
-          <div class="recent-row">
-            <div>
-              <div class="recent-desc">{{ r.description }}</div>
-              <div class="recent-meta">{{ r.category.name }} · {{ r.date }}</div>
-            </div>
-            <span class="mono" [class.income]="r.type === 'INCOME'" [class.expense]="r.type === 'EXPENSE'">
-              {{ r.type === 'INCOME' ? '+' : '-' }}{{ r.displayAmount | currencyFormat: viewCurrency() }}
-            </span>
-          </div>
-        }
-        @if (recentTxDisplay().length === 0) {
-          <div class="empty-state small">Sin movimientos este mes.</div>
-        }
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="detail-cards">
   <div class="stat-card">
     <div class="card-head">
-      <span class="icon">$</span>
-      <span class="card-title">Detalle en Pesos ARS</span>
+      <span class="card-title">Detalle en pesos</span>
+      <span class="cur-tag mono">ARS</span>
     </div>
     <div class="card-lines">
       <div class="line"><span>Ingresos</span><span class="mono income">{{ arsIncome() | currencyFormat: 'ARS' }}</span></div>
@@ -153,8 +80,8 @@
 
   <div class="stat-card">
     <div class="card-head">
-      <span class="icon">US$</span>
-      <span class="card-title">Detalle en Dólares USD</span>
+      <span class="card-title">Detalle en dólares</span>
+      <span class="cur-tag mono">USD</span>
     </div>
     <div class="card-lines">
       <div class="line"><span>Ingresos</span><span class="mono income">{{ usdIncome() | currencyFormat: 'USD' }}</span></div>
@@ -163,4 +90,49 @@
       <div class="line total"><span>Balance</span><span class="mono" [class.income]="usdBalance() >= 0" [class.expense]="usdBalance() < 0">{{ usdBalance() | currencyFormat: 'USD' }}</span></div>
     </div>
   </div>
+</div>
+
+<div class="dash-grid grow">
+  <div class="breakdown-card">
+    <div class="breakdown-header">
+      <span class="card-title">{{ dashType() === 'EXPENSE' ? 'Gastos' : 'Ingresos' }} por categoría (en {{ viewCurrency() }})</span>
+      <div class="toggles">
+        <button type="button" class="pill" [class.active]="dashType() === 'EXPENSE'" (click)="setDashType('EXPENSE')">Gastos</button>
+        <button type="button" class="pill" [class.active]="dashType() === 'INCOME'" (click)="setDashType('INCOME')">Ingresos</button>
+      </div>
+    </div>
+
+    @if (breakdown().length > 0) {
+      <div class="breakdown-body">
+        <app-donut-chart
+          [slices]="breakdownSlices()"
+          [currency]="viewCurrency()"
+          [centerLabel]="dashType() === 'EXPENSE' ? 'Total gastado' : 'Total ingresado'"
+        />
+      </div>
+    } @else {
+      <div class="empty-state grow">No hay movimientos de este tipo en {{ periodLabel() }}.</div>
+    }
+  </div>
+
+  <div class="side-card">
+    <div class="card-title">Últimos movimientos (en {{ viewCurrency() }})</div>
+    <div class="recent-list">
+      @for (r of recentTxDisplay(); track r.id) {
+        <div class="recent-row">
+          <div class="recent-main">
+            <div class="recent-desc">{{ r.description }}</div>
+            <div class="recent-meta">{{ r.category.name }} · {{ r.date }}</div>
+          </div>
+          <span class="mono" [class.income]="r.type === 'INCOME'" [class.expense]="r.type === 'EXPENSE'">
+            {{ r.type === 'INCOME' ? '+' : '-' }}{{ r.displayAmount | currencyFormat: viewCurrency() }}
+          </span>
+        </div>
+      }
+      @if (recentTxDisplay().length === 0) {
+        <div class="empty-state grow">Sin movimientos en {{ periodLabel() }}.</div>
+      }
+    </div>
+  </div>
+</div>
 </div>

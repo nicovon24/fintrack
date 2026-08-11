@@ -1,78 +1,89 @@
-<div class="range-row">
-  <app-period-filter (changed)="onPeriodChange($event)" />
-</div>
+<div class="page">
+  <header class="page-head">
+    <app-period-filter (changed)="onPeriodChange($event)" />
+    <span class="rate-note">
+      Pesos + dólares pesificados{{ blueRate() ? ' a $' + blueRate()!.toFixed(0) + ' (blue)' : '' }}, sumados en un único total.
+    </span>
+  </header>
 
-<div class="stat-cards">
-  <div class="stat-card">
-    <div class="card-title">Ingresos totales (combinado)</div>
-    <div class="card-value income mono">{{ totalIncome() | currencyFormat: 'ARS' }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="card-title">Gastos totales (combinado)</div>
-    <div class="card-value expense mono">{{ totalExpense() | currencyFormat: 'ARS' }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="card-title">Tasa de ahorro</div>
-    <div class="card-value accent mono">{{ savingsRate() }}%</div>
-  </div>
-</div>
-<div class="rate-note">
-  Pesos + dólares (viajes, etc.) pesificados{{ blueRate() ? ' a $' + blueRate()!.toFixed(0) + ' (dólar blue)' : '' }} y sumados en un único total.
-</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="card-title">Ingresos</div>
+      <div class="card-value income mono">{{ totalIncome() | currencyFormat: 'ARS' }}</div>
+    </div>
 
-<div class="charts-grid">
-  <div class="chart-card">
-    <div class="chart-title">Ingresos vs. gastos por mes</div>
-    <div class="bars">
-      @for (b of monthlyBars(); track b.key) {
-        <div class="bar-group">
-          <div class="bar-pair">
-            <div class="bar income-bar" [style.height.%]="barHeight(b.income)"></div>
-            <div class="bar expense-bar" [style.height.%]="barHeight(b.expense)"></div>
-          </div>
-          <span class="bar-label">{{ b.label }}</span>
+    <div class="kpi-card">
+      <div class="card-title">Gastos</div>
+      <div class="card-value expense mono">{{ totalExpense() | currencyFormat: 'ARS' }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="card-title">Neto</div>
+      <div class="card-value mono" [class.income]="netTotal() >= 0" [class.expense]="netTotal() < 0">
+        {{ netTotal() | currencyFormat: 'ARS' }}
+      </div>
+    </div>
+
+    <div class="kpi-card rate-card">
+      <div class="rate-ring" [style.background]="'conic-gradient(var(--accent) ' + savingsRate() + '%, var(--divider) ' + savingsRate() + '%)'">
+        <span class="rate-ring-inner mono">{{ savingsRate() }}%</span>
+      </div>
+      <div class="rate-text">
+        <div class="card-title">Tasa de ahorro</div>
+        <div class="rate-desc">De cada $100 que entraron, ahorraste ${{ savingsRate() }}.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid grow">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Ingresos vs. gastos por mes</span>
+        <div class="legend">
+          <span><span class="dot income-dot"></span>Ingresos</span>
+          <span><span class="dot expense-dot"></span>Gastos</span>
         </div>
+      </div>
+
+      @if (monthlyBars().length > 0 && hasData()) {
+        <div class="bars">
+          @for (b of monthlyBars(); track b.key) {
+            <div class="bar-group" [title]="b.label">
+              <div class="bar-pair">
+                <div class="bar income-bar" [style.height.%]="barHeight(b.income)"></div>
+                <div class="bar expense-bar" [style.height.%]="barHeight(b.expense)"></div>
+              </div>
+              <span class="bar-label">{{ b.label }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state grow">{{ loading() ? 'Cargando…' : 'No hay movimientos en ' + periodLabel() + '.' }}</div>
       }
     </div>
-    <div class="legend">
-      <span><span class="dot income-dot"></span>Ingresos</span>
-      <span><span class="dot expense-dot"></span>Gastos</span>
-    </div>
-  </div>
 
-  <div class="chart-card gauge-card">
-    <div class="gauge" [style.background]="'conic-gradient(var(--accent) ' + savingsRate() + '%, var(--divider) ' + savingsRate() + '%)'">
-      <div class="gauge-inner">
-        <span class="gauge-value mono">{{ savingsRate() }}%</span>
-        <span class="gauge-label">ahorrado</span>
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Top categorías de gasto</span>
+        <span class="chart-sub">{{ periodLabel() }}</span>
       </div>
-    </div>
-    <div class="gauge-text">
-      <div class="gauge-title">Ratio de ahorro sobre ingresos combinados</div>
-      <div class="gauge-desc">
-        {{ periodLabel() }}: ingresos {{ totalIncome() | currencyFormat: 'ARS' }}, gastos
-        {{ totalExpense() | currencyFormat: 'ARS' }}.
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="top-cats-card">
-  <div class="chart-title">Top categorías de gasto — {{ periodLabel() }}</div>
-  <div class="top-cats-list">
-    @for (c of topCategories(); track c.name) {
-      <div class="top-cat-item">
-        <div class="top-cat-row">
-          <span>{{ c.name }}</span>
-          <span class="mono expense">{{ c.amount | currencyFormat: 'ARS' }}</span>
-        </div>
-        <div class="bar-track">
-          <div class="bar-fill" [style.width.%]="c.pct"></div>
-        </div>
+      <div class="top-cats-list">
+        @for (c of topCategories(); track c.name) {
+          <div class="top-cat-item">
+            <div class="top-cat-row">
+              <span class="top-cat-name">{{ c.name }}</span>
+              <span class="mono expense">{{ c.amount | currencyFormat: 'ARS' }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="c.pct"></div>
+            </div>
+          </div>
+        }
+        @if (!loading() && topCategories().length === 0) {
+          <div class="empty-state grow">No hay gastos en este rango.</div>
+        }
       </div>
-    }
-    @if (!loading() && topCategories().length === 0) {
-      <div class="empty-state">No hay gastos en este rango.</div>
-    }
+    </div>
   </div>
 </div>

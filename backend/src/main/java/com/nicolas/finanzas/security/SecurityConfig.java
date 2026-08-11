@@ -34,7 +34,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/**", "/login/**")
+                        // "/error" permitido: el dispatch interno a /error no vuelve a pasar por
+                        // JwtAuthenticationFilter (OncePerRequestFilter no filtra ERROR dispatch), asi que
+                        // sin esto cualquier 404/500 real se enmascara como un 401 con body vacio.
+                        .requestMatchers("/", "/error", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/**", "/login/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")

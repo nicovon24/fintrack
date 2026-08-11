@@ -1,3 +1,20 @@
+:host {
+  display: flex;
+  width: 100%;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+}
+
+.grow {
+  flex: 1 0 auto;
+}
+
 .mono {
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -10,77 +27,138 @@
   color: var(--expense);
 }
 
-.accent {
-  color: var(--accent);
-}
-
-.range-row {
-  margin-bottom: 20px;
-}
-
-.stat-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-bottom: 16px;
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .rate-note {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  line-height: 1.5;
+  max-width: 340px;
+  text-align: right;
 }
 
-.stat-card {
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.kpi-card {
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--card-bg);
-  padding: 18px;
+  padding: 10px 12px;
+  min-width: 0;
 }
 
 .card-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
   color: var(--text-secondary);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .card-value {
-  font-size: 21px;
+  font-size: 16.5px;
   font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* El anillo reemplaza al gauge grande que repetia el mismo numero en otra card. */
+.rate-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rate-ring {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rate-ring-inner {
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.rate-text {
+  min-width: 0;
+}
+
+.rate-desc {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .charts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  align-items: stretch;
 }
 
 .chart-card {
   border: 1px solid var(--divider);
   border-radius: 10px;
   background: var(--card-bg);
-  padding: 20px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .chart-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 14px;
+}
+
+.chart-sub {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .bars {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-  height: 130px;
+  gap: 6px;
+  height: 100px;
 }
 
 .bar-group {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -91,15 +169,16 @@
 .bar-pair {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 3px;
   height: 100%;
   width: 100%;
   justify-content: center;
 }
 
 .bar {
-  width: 8px;
-  border-radius: 2px 2px 0 0;
+  flex: 1;
+  max-width: 14px;
+  border-radius: 3px 3px 0 0;
   min-height: 2px;
 }
 
@@ -112,16 +191,15 @@
 }
 
 .bar-label {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
   margin-top: 6px;
 }
 
 .legend {
   display: flex;
-  gap: 16px;
-  margin-top: 10px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
@@ -141,80 +219,27 @@
   background: var(--expense);
 }
 
-.gauge-card {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.gauge {
-  width: 132px;
-  height: 132px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.gauge-inner {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: var(--card-bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.gauge-value {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.gauge-label {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.gauge-text {
-  flex: 1;
-  min-width: 160px;
-}
-
-.gauge-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.gauge-desc {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.top-cats-card {
-  border: 1px solid var(--divider);
-  border-radius: 10px;
-  background: var(--card-bg);
-  padding: 20px;
-}
-
 .top-cats-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden auto;
 }
 
 .top-cat-row {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 5px;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.top-cat-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bar-track {
@@ -227,6 +252,7 @@
 .bar-fill {
   height: 100%;
   background: var(--expense);
+  border-radius: 3px;
 }
 
 .empty-state {
@@ -234,4 +260,17 @@
   color: var(--text-muted);
   font-size: 13.5px;
   padding: 20px 0;
+
+  &.grow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Mismo corte que el sidebar mobile (app-shell.scss). */
+@media (max-width: 860px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
 }

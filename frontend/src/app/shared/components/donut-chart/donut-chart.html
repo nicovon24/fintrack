@@ -1,0 +1,65 @@
+<div class="donut-body">
+  <div class="donut-wrap">
+    <svg viewBox="0 0 120 120" class="donut" role="img" [attr.aria-label]="centerLabel()">
+      <circle class="donut-track" cx="60" cy="60" r="54" />
+      @for (arc of arcs(); track arc.label) {
+        <circle
+          class="donut-arc"
+          [class.dimmed]="hovered() && hovered() !== arc.label"
+          cx="60" cy="60" r="54"
+          [attr.stroke]="arc.color"
+          [attr.stroke-dasharray]="arc.dashArray"
+          [attr.stroke-dashoffset]="arc.dashOffset"
+          tabindex="0"
+          (mouseenter)="setHovered(arc.label)"
+          (mouseleave)="setHovered(null)"
+          (focus)="setHovered(arc.label)"
+          (blur)="setHovered(null)"
+        />
+      }
+    </svg>
+    <div class="donut-center">
+      @if (hoveredArc(); as arc) {
+        <span class="donut-label">{{ arc.label }}</span>
+        <span class="donut-value mono">{{ arc.value | currencyFormat: currency() : true }}</span>
+        <span class="donut-sub mono">{{ arc.pct | number: '1.1-1' }}%</span>
+      } @else {
+        <span class="donut-label">{{ centerLabel() }}</span>
+        <span class="donut-value mono">{{ visibleTotal() | currencyFormat: currency() : true }}</span>
+        @if (hasHidden()) {
+          <span class="donut-sub">parcial</span>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="donut-legend">
+    @for (s of legend(); track s.label) {
+      <button
+        type="button"
+        class="legend-row"
+        [class.off]="s.hidden"
+        (click)="toggleSlice(s.label)"
+        (mouseenter)="setHovered(s.hidden ? null : s.label)"
+        (mouseleave)="setHovered(null)"
+        [attr.aria-pressed]="!s.hidden"
+        [title]="s.hidden ? 'Mostrar ' + s.label : 'Ocultar ' + s.label"
+      >
+        <span class="legend-label">
+          <span class="dot" [style.background]="s.color"></span>
+          <span class="legend-name">{{ s.label }}</span>
+          @if (s.meta) {
+            <span class="muted legend-meta">{{ s.meta }}</span>
+          }
+        </span>
+        <span class="legend-values mono">
+          <span class="legend-amount">{{ s.value | currencyFormat: currency() : true }}</span>
+          <span class="muted legend-pct">{{ s.hidden ? '—' : (s.pct | number: '1.0-0') + '%' }}</span>
+        </span>
+      </button>
+    }
+    @if (hasHidden()) {
+      <button type="button" class="reset-legend" (click)="showAll()">Mostrar todo</button>
+    }
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { PrivacyService } from '../../../core/privacy/privacy.service';
 import { ThemeService } from '../../../core/theme/theme.service';
 
 interface NavItem {
@@ -12,10 +13,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: 'grid' },
-  { path: '/import', label: 'Import Excel', icon: 'upload' },
+  { path: '/import', label: 'Cargar movimientos', icon: 'upload' },
   { path: '/transactions', label: 'Transacciones', icon: 'table' },
   { path: '/categories', label: 'Categorías', icon: 'tag' },
-  { path: '/investments', label: 'Ahorros + Inversiones', icon: 'trend' },
+  { path: '/investments', label: 'Mi capital', icon: 'trend' },
   { path: '/analytics', label: 'Analytics', icon: 'bars' }
 ];
 
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
 })
 export class AppShell {
   protected readonly theme = inject(ThemeService);
+  protected readonly privacy = inject(PrivacyService);
   protected readonly authService = inject(AuthService);
 
   protected readonly navItems = NAV_ITEMS;
@@ -40,6 +42,10 @@ export class AppShell {
 
   toggleTheme(): void {
     this.theme.toggle();
+  }
+
+  togglePrivacy(): void {
+    this.privacy.toggle();
   }
 
   toggleMobileNav(): void {

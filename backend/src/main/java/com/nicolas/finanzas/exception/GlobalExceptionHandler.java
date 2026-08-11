@@ -44,4 +44,12 @@ public class GlobalExceptionHandler {
         ApiError error = ApiError.of(HttpStatus.CONFLICT.value(), "Duplicate Resource", List.of(ex.getMessage()));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
+
+    @ExceptionHandler(IolApiException.class)
+    public ResponseEntity<ApiError> handleIolApi(IolApiException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatus());
+        HttpStatus resolvedStatus = status != null ? status : HttpStatus.BAD_GATEWAY;
+        ApiError error = ApiError.of(resolvedStatus.value(), "IOL Error", List.of(ex.getMessage()));
+        return ResponseEntity.status(resolvedStatus).body(error);
+    }
 }

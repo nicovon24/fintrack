@@ -18,8 +18,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authorizedReq).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401 && req.url.startsWith(API_BASE_URL)) {
-        authService.clearSession();
-        router.navigate(['/login']);
+        // Un 401 en /api/iol/** puede ser "se vencio la sesion de IOL" (el proxy lo marca con
+        // error: "IOL Error") o, como cualquier otro endpoint, "se vencio la sesion de fintrack".
+        // Solo el primer caso debe evitar el logout global - el segundo se trata igual que siempre.
+        const isGenuineIolError = (error.error as { error?: string } | null)?.error === 'IOL Error';
+        if (!isGenuineIolError) {
+          authService.clearSession();
+          router.navigate(['/login']);
+        }
       }
       return throwError(() => error);
     })

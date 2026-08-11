@@ -78,6 +78,10 @@ export class Analytics {
       .reduce((sum, t) => sum + this.amountArs(t), 0)
   );
 
+  protected readonly netTotal = computed(() => this.totalIncome() - this.totalExpense());
+
+  protected readonly hasData = computed(() => this.transactions().length > 0);
+
   protected readonly savingsRate = computed(() => {
     const income = this.totalIncome();
     if (income <= 0) return 0;

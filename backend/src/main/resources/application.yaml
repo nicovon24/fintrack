@@ -37,3 +37,9 @@ app:
   frontend-redirect-uri: ${FRONTEND_REDIRECT_URI:http://localhost:4200/auth/callback}
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
+  iol:
+    base-url: ${IOL_BASE_URL:https://api.invertironline.com}
+
+logging:
+  level:
+    com.nicolas.finanzas.iol: INFO
