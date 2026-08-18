@@ -1,0 +1,65 @@
+# Stack completo de FinTrack: base de datos + API + frontend.
+#
+# Uso:
+#   docker compose up -d --build   -> construye y levanta todo
+#   docker compose down            -> baja todo (los datos persisten)
+#   docker compose down -v         -> baja todo y borra la base
+#
+# La app queda en http://localhost:51840 (el frontend hace de proxy hacia la API).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fintrack-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-gastosdb}
+      POSTGRES_USER: ${DB_USER:-gastos}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gastos123}
+    ports:
+      - "51842:5432"
+    volumes:
+      - fintrack-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gastos} -d ${DB_NAME:-gastosdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: fintrack-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Credenciales de Google (y cualquier override) salen de backend/.env, que ya usa
+    # el modo local. Lo de abajo son los defaults de desarrollo.
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-gastosdb}
+      DB_USER: ${DB_USER:-gastos}
+      DB_PASSWORD: ${DB_PASSWORD:-gastos123}
+      JWT_SECRET: ${JWT_SECRET:-this-is-a-dev-only-secret-change-it-before-prod-32b}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-1800000}
+      # El navegador siempre habla con el frontend, no con la API directamente.
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:51840}
+      FRONTEND_REDIRECT_URI: ${FRONTEND_REDIRECT_URI:-http://localhost:51840/auth/callback}
+      IOL_BASE_URL: ${IOL_BASE_URL:-https://api.invertironline.com}
+    ports:
+      - "51841:51841"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: fintrack-frontend
+    depends_on:
+      - backend
+    ports:
+      - "51840:80"
+
+volumes:
+  fintrack-data:

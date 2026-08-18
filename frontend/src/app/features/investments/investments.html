@@ -57,8 +57,43 @@
         </div>
       }
 
-      @if (iolConnected()) {
+      @if (iolConnected() && iolLoading()) {
         <div class="portfolio-cards">
+          <app-skeleton variant="card" [count]="3" />
+        </div>
+      }
+
+      @if (iolConnected() && !iolLoading()) {
+        <div class="portfolio-cards">
+          <!-- El total consolidado abre la fila: responde "cuanto tengo" antes de abrir cada moneda. -->
+          <div class="stat-card total-highlight">
+            <div class="card-title">Patrimonio total</div>
+            @if (rateReady()) {
+              <div class="card-lines">
+                <div class="line hero">
+                  <span class="hero-value mono">{{ totalValue() | currencyFormat: invViewCurrency() }}</span>
+                </div>
+                <div class="line sub">
+                  <span>ARS + USD al blue</span>
+                  <span class="muted mono">{{ blueRate() | currencyFormat: 'ARS' }}</span>
+                </div>
+                <div class="divider"></div>
+                <div class="line total">
+                  <span>Resultado</span>
+                  <span class="mono" [class.income]="(totalResult() ?? 0) >= 0" [class.expense]="(totalResult() ?? 0) < 0">
+                    {{ (totalResult() ?? 0) >= 0 ? '+' : '' }}{{ totalResult() | currencyFormat: invViewCurrency() }}
+                    <span class="pct">({{ totalResultPct() >= 0 ? '+' : '' }}{{ totalResultPct() | number: '1.2-2' }}%)</span>
+                  </span>
+                </div>
+              </div>
+            } @else {
+              <div class="card-lines">
+                <div class="line hero"><span class="hero-value mono muted">—</span></div>
+                <div class="line sub"><span class="muted">Sin cotización del blue no se pueden sumar las dos monedas.</span></div>
+              </div>
+            }
+          </div>
+
           <div class="stat-card">
             <div class="card-title">Cartera ARS</div>
             <div class="card-lines">
@@ -93,7 +128,13 @@
       }
 
       @if (iolLoading()) {
-        <div class="loading-card">Cargando tu cartera de IOL…</div>
+        <div class="charts-row">
+          <div class="alloc-card">
+            <div class="card-head-row"><span class="chart-title">Distribución de la cartera</span></div>
+            <div class="alloc-body"><app-skeleton variant="donut" /></div>
+          </div>
+          <div class="total-card"><app-skeleton variant="row" [count]="4" /></div>
+        </div>
       }
 
       @if (iolLoadError(); as err) {

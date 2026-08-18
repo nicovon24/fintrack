@@ -381,9 +381,12 @@ public class ImportService {
                 .toList();
 
         if (!missing.isEmpty()) {
+            // Crear categorias es solo para ADMIN, asi que la salida que sirve a cualquier
+            // usuario es corregir el archivo; pedirlas al admin queda como alternativa.
             throw new ImportValidationException(List.of(
-                    "Las siguientes categorias no existen, pedile al admin que las cree antes de reintentar: "
-                            + String.join(", ", missing)));
+                    "Las siguientes categorias no existen: " + String.join(", ", missing)
+                            + ". Corregi esas filas para usar alguna de las categorias existentes, "
+                            + "o pedile a un administrador que las cree."));
         }
     }
 

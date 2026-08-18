@@ -87,6 +87,10 @@ app-confirm-step {
 }
 
 .loading-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   border: 1px solid var(--divider);
   border-radius: 10px;
   background: var(--card-bg);

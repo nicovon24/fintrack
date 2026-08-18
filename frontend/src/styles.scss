@@ -129,3 +129,59 @@ button {
 .mono {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
 }
+
+/* Banner de fallo de carga. Global porque lo usan dashboard, analytics y categorias:
+   sin el, un error de red deja el skeleton girando sin explicar nada. */
+.load-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--expense-border);
+  background: var(--expense-bg);
+  color: var(--expense);
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.btn-retry {
+  border: 1px solid currentcolor;
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-retry:hover {
+  background: color-mix(in srgb, currentcolor 12%, transparent);
+}
+
+/* Spinner para acciones en curso (subir, guardar, analizar). Para carga de datos
+   va el skeleton: el spinner no dice nada sobre lo que esta por aparecer. */
+.spinner {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}

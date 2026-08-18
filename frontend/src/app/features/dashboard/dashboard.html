@@ -6,6 +6,13 @@
   </div>
 </div>
 
+@if (loadError()) {
+  <div class="load-error">
+    <span>No se pudieron cargar los datos del período.</span>
+    <button type="button" class="btn-retry" (click)="retry()">Reintentar</button>
+  </div>
+}
+
 @if (showQuickAdd()) {
   <div class="modal-backdrop" (click)="closeQuickAdd()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -45,6 +52,11 @@
   </div>
 }
 
+@if (loading()) {
+  <div class="summary-row">
+    <app-skeleton variant="card" [count]="3" />
+  </div>
+} @else {
 <div class="summary-row">
   <div class="stat-card total-card">
     <div class="card-head">
@@ -91,6 +103,7 @@
     </div>
   </div>
 </div>
+}
 
 <div class="dash-grid grow">
   <div class="breakdown-card">
@@ -102,7 +115,9 @@
       </div>
     </div>
 
-    @if (breakdown().length > 0) {
+    @if (loading()) {
+      <div class="breakdown-body"><app-skeleton variant="donut" /></div>
+    } @else if (breakdown().length > 0) {
       <div class="breakdown-body">
         <app-donut-chart
           [slices]="breakdownSlices()"
@@ -118,6 +133,9 @@
   <div class="side-card">
     <div class="card-title">Últimos movimientos (en {{ viewCurrency() }})</div>
     <div class="recent-list">
+      @if (loading()) {
+        <app-skeleton variant="row" [count]="6" />
+      }
       @for (r of recentTxDisplay(); track r.id) {
         <div class="recent-row">
           <div class="recent-main">
@@ -129,7 +147,7 @@
           </span>
         </div>
       }
-      @if (recentTxDisplay().length === 0) {
+      @if (!loading() && recentTxDisplay().length === 0) {
         <div class="empty-state grow">Sin movimientos en {{ periodLabel() }}.</div>
       }
     </div>

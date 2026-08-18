@@ -21,7 +21,7 @@ Read ONLY the rule files relevant to your current task. Always read `general.md`
 ## Stack
 
 - **Java 25** + **Spring Boot 4.1.0** (Maven)
-- **PostgreSQL** (via local Docker Compose, port 55432)
+- **PostgreSQL** (via local Docker Compose, port 51842)
 - **Lombok** for boilerplate (getters/setters/constructors)
 - **Bean Validation** (jakarta.validation) on request DTOs
 - **springdoc-openapi 3.1.0** for Swagger (`/swagger-ui/index.html`)

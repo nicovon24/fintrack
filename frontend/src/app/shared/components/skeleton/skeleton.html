@@ -1,0 +1,39 @@
+@for (_ of items(); track $index) {
+  @switch (variant()) {
+    @case ('kpi') {
+      <div class="sk-kpi">
+        <div class="sk-bar sk-line-sm"></div>
+        <div class="sk-bar sk-line-lg"></div>
+      </div>
+    }
+    @case ('card') {
+      <div class="sk-card">
+        <div class="sk-bar sk-line-sm"></div>
+        <div class="sk-bar sk-line-lg"></div>
+        <div class="sk-bar sk-line-md"></div>
+      </div>
+    }
+    @case ('chart') {
+      <div class="sk-chart">
+        @for (h of barHeights; track $index) {
+          <div class="sk-bar sk-chart-bar" [style.height.%]="h"></div>
+        }
+      </div>
+    }
+    @case ('donut') {
+      <div class="sk-donut"></div>
+    }
+    @case ('row') {
+      <div class="sk-row">
+        <div class="sk-bar sk-line-md"></div>
+        <div class="sk-bar sk-line-sm"></div>
+      </div>
+    }
+    @case ('value') {
+      <div class="sk-bar sk-line-lg" [style.width]="width()"></div>
+    }
+    @default {
+      <div class="sk-bar sk-line-md" [style.width]="width()"></div>
+    }
+  }
+}

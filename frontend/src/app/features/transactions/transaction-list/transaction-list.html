@@ -31,6 +31,15 @@
       </tr>
     </thead>
     <tbody>
+      @if (loading()) {
+        @for (row of skeletonRows; track $index) {
+          <tr class="skeleton-row">
+            @for (cell of skeletonCells; track $index) {
+              <td><app-skeleton [width]="cell" /></td>
+            }
+          </tr>
+        }
+      }
       @for (tx of filteredTransactions(); track tx.id) {
         @if (editingId() === tx.id) {
           <tr app-transaction-edit-dialog [transaction]="tx" [categories]="categories()" (saved)="saveEdit(tx.id, $event)" (cancelled)="cancelEdit()"></tr>

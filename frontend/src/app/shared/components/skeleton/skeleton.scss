@@ -1,0 +1,128 @@
+:host {
+  display: contents;
+}
+
+/* Barra base: el shimmer es un gradiente que viaja, no un fade del bloque entero
+   (un fade completo late y cansa la vista cuando hay muchos placeholders juntos). */
+.sk-bar {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--divider) 70%, var(--card-bg));
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--text-muted) 14%, transparent),
+      transparent
+    );
+    animation: sk-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes sk-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.sk-line-sm {
+  height: 9px;
+  width: 38%;
+}
+
+.sk-line-md {
+  height: 12px;
+  width: 65%;
+}
+
+.sk-line-lg {
+  height: 17px;
+  width: 80%;
+}
+
+.sk-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--divider);
+  border-radius: 9px;
+  background: var(--card-bg);
+  padding: 12px;
+  min-width: 0;
+}
+
+.sk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 16px;
+  min-width: 0;
+}
+
+.sk-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  height: 100px;
+  width: 100%;
+
+  .sk-chart-bar {
+    flex: 1;
+    max-width: 16px;
+    border-radius: 3px 3px 0 0;
+  }
+}
+
+.sk-donut {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto;
+  background: color-mix(in srgb, var(--divider) 70%, var(--card-bg));
+  mask: radial-gradient(circle, transparent 52%, #000 53%);
+  animation: sk-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--divider);
+
+  .sk-line-md {
+    width: 45%;
+  }
+  .sk-line-sm {
+    width: 22%;
+  }
+}
+
+/* Sin animacion para quien la desactivo en el sistema: el placeholder queda estatico. */
+@media (prefers-reduced-motion: reduce) {
+  .sk-bar::after,
+  .sk-donut {
+    animation: none;
+  }
+}

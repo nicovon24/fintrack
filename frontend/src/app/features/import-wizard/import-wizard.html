@@ -15,7 +15,10 @@
 }
 
 @if (loading()) {
-  <div class="loading-card">Analizando archivo…</div>
+  <div class="loading-card">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Analizando archivo…</span>
+  </div>
 } @else {
   @switch (step()) {
     @case (1) {

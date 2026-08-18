@@ -6,6 +6,7 @@ import { CategoryResponse } from '../../core/models/category.model';
 import { Currency, TransactionResponse, TransactionType } from '../../core/models/transaction.model';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { DonutChart, DonutSlice } from '../../shared/components/donut-chart/donut-chart';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { PeriodChange, PeriodFilter } from '../../shared/components/period-filter/period-filter';
 import { CategoriesService } from '../categories/categories.service';
 import { TransactionFilters, TransactionsService } from '../transactions/transactions.service';
@@ -25,7 +26,7 @@ interface BreakdownItem {
 // Resumen mensual: totales por moneda + combinado ARS + breakdown por categoria.
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, CurrencyFormatPipe, PeriodFilter, DonutChart],
+  imports: [FormsModule, CurrencyFormatPipe, PeriodFilter, DonutChart, Skeleton],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -46,6 +47,7 @@ export class Dashboard {
   protected readonly categories = signal<CategoryResponse[]>([]);
   protected readonly monthTransactions = signal<TransactionResponse[]>([]);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
 
   protected readonly arsIncome = signal(0);
   protected readonly arsExpense = signal(0);
@@ -160,21 +162,37 @@ export class Dashboard {
       const filters = this.activeFilters();
       const id = ++requestId;
       this.loading.set(true);
-      this.transactionsService.findAll(filters).subscribe((tx) => {
-        if (id !== requestId) return;
-        this.monthTransactions.set(tx);
-        this.loading.set(false);
+      this.loadError.set(false);
+      this.transactionsService.findAll(filters).subscribe({
+        next: (tx) => {
+          if (id !== requestId) return;
+          this.monthTransactions.set(tx);
+          this.loading.set(false);
+        },
+        // Sin esta rama el skeleton quedaba girando para siempre ante un error de red.
+        error: () => {
+          if (id !== requestId) return;
+          this.monthTransactions.set([]);
+          this.loadError.set(true);
+          this.loading.set(false);
+        }
       });
-      this.dashboardService.getSummary(filters).subscribe((summary) => {
-        if (id !== requestId) return;
-        const ars = summary.byCurrency.find((c) => c.currency === 'ARS');
-        const usd = summary.byCurrency.find((c) => c.currency === 'USD');
-        this.arsIncome.set(ars?.totalIncome ?? 0);
-        this.arsExpense.set(ars?.totalExpense ?? 0);
-        this.arsBalance.set(ars?.balance ?? 0);
-        this.usdIncome.set(usd?.totalIncome ?? 0);
-        this.usdExpense.set(usd?.totalExpense ?? 0);
-        this.usdBalance.set(usd?.balance ?? 0);
+      this.dashboardService.getSummary(filters).subscribe({
+        next: (summary) => {
+          if (id !== requestId) return;
+          const ars = summary.byCurrency.find((c) => c.currency === 'ARS');
+          const usd = summary.byCurrency.find((c) => c.currency === 'USD');
+          this.arsIncome.set(ars?.totalIncome ?? 0);
+          this.arsExpense.set(ars?.totalExpense ?? 0);
+          this.arsBalance.set(ars?.balance ?? 0);
+          this.usdIncome.set(usd?.totalIncome ?? 0);
+          this.usdExpense.set(usd?.totalExpense ?? 0);
+          this.usdBalance.set(usd?.balance ?? 0);
+        },
+        error: () => {
+          if (id !== requestId) return;
+          this.loadError.set(true);
+        }
       });
     });
   }
@@ -182,6 +200,11 @@ export class Dashboard {
   onPeriodChange(event: PeriodChange): void {
     this.activeFilters.set(event.filters);
     this.periodLabel.set(event.label);
+  }
+
+  /** Reintenta la carga reasignando el mismo filtro, lo que vuelve a disparar el effect. */
+  retry(): void {
+    this.activeFilters.set({ ...this.activeFilters() });
   }
 
   setViewCurrency(c: Currency): void {

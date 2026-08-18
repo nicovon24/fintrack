@@ -6,6 +6,7 @@ import { CategoryResponse } from '../../../core/models/category.model';
 import { TransactionRequest, TransactionResponse } from '../../../core/models/transaction.model';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { CurrencyBadge } from '../../../shared/components/currency-badge/currency-badge';
+import { Skeleton } from '../../../shared/components/skeleton/skeleton';
 import { CurrencyFormatPipe } from '../../../shared/pipes/currency-format.pipe';
 import { CategoriesService } from '../../categories/categories.service';
 import { TransactionEditDialog } from '../transaction-edit-dialog/transaction-edit-dialog';
@@ -17,7 +18,7 @@ type CurrencyFilter = 'todas' | 'ARS' | 'USD';
 // Tabla admin de transacciones: filtros (mes/tipo/categoria/moneda), editar, borrar.
 @Component({
   selector: 'app-transaction-list',
-  imports: [FormsModule, CurrencyBadge, CurrencyFormatPipe, DatePipe, TransactionEditDialog, ConfirmDialog],
+  imports: [FormsModule, CurrencyBadge, CurrencyFormatPipe, DatePipe, TransactionEditDialog, ConfirmDialog, Skeleton],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.scss'
 })
@@ -28,6 +29,11 @@ export class TransactionList {
   protected readonly transactions = signal<TransactionResponse[]>([]);
   protected readonly categories = signal<CategoryResponse[]>([]);
   protected readonly loading = signal(true);
+
+  // Filas fantasma mientras carga. Los anchos imitan el largo tipico de cada columna
+  // (fecha, categoria, descripcion, monto, cotizacion, acciones).
+  protected readonly skeletonRows = Array.from({ length: 8 });
+  protected readonly skeletonCells = ['72px', '80%', '90%', '70%', '38px', '60%'];
 
   protected readonly typeFilter = signal<TypeFilter>('todos');
   protected readonly categoryFilter = signal<'todas' | number>('todas');

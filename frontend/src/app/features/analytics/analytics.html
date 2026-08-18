@@ -6,46 +6,101 @@
     </span>
   </header>
 
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="card-title">Ingresos</div>
-      <div class="card-value income mono">{{ totalIncome() | currencyFormat: 'ARS' }}</div>
+  @if (loadError()) {
+    <div class="load-error">
+      <span>No se pudieron cargar los movimientos.</span>
+      <button type="button" class="btn-retry" (click)="retry()">Reintentar</button>
     </div>
+  }
 
-    <div class="kpi-card">
-      <div class="card-title">Gastos</div>
-      <div class="card-value expense mono">{{ totalExpense() | currencyFormat: 'ARS' }}</div>
+  @if (loading()) {
+    <div class="kpi-row">
+      <app-skeleton variant="kpi" [count]="6" />
     </div>
-
-    <div class="kpi-card">
-      <div class="card-title">Neto</div>
-      <div class="card-value mono" [class.income]="netTotal() >= 0" [class.expense]="netTotal() < 0">
-        {{ netTotal() | currencyFormat: 'ARS' }}
+  } @else {
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="card-title">Ingresos</div>
+        <div class="card-value income mono">{{ totalIncome() | currencyFormat: 'ARS' }}</div>
+        <div class="card-foot">{{ incomeCount() }} {{ incomeCount() === 1 ? 'movimiento' : 'movimientos' }}</div>
       </div>
-    </div>
 
-    <div class="kpi-card rate-card">
-      <div class="rate-ring" [style.background]="'conic-gradient(var(--accent) ' + savingsRate() + '%, var(--divider) ' + savingsRate() + '%)'">
-        <span class="rate-ring-inner mono">{{ savingsRate() }}%</span>
+      <div class="kpi-card">
+        <div class="card-title">Gastos</div>
+        <div class="card-value expense mono">{{ totalExpense() | currencyFormat: 'ARS' }}</div>
+        <div class="card-foot">{{ expenseCount() }} {{ expenseCount() === 1 ? 'movimiento' : 'movimientos' }}</div>
       </div>
-      <div class="rate-text">
-        <div class="card-title">Tasa de ahorro</div>
-        <div class="rate-desc">De cada $100 que entraron, ahorraste ${{ savingsRate() }}.</div>
-      </div>
-    </div>
-  </div>
 
-  <div class="charts-grid grow">
-    <div class="chart-card">
-      <div class="chart-head">
-        <span class="chart-title">Ingresos vs. gastos por mes</span>
-        <div class="legend">
-          <span><span class="dot income-dot"></span>Ingresos</span>
-          <span><span class="dot expense-dot"></span>Gastos</span>
+      <div class="kpi-card">
+        <div class="card-title">Neto</div>
+        <div class="card-value mono" [class.income]="netTotal() >= 0" [class.expense]="netTotal() < 0">
+          {{ netTotal() | currencyFormat: 'ARS' }}
+        </div>
+        <div class="card-foot">{{ netTotal() >= 0 ? 'Ahorraste' : 'Gastaste de más' }} en {{ periodLabel() }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="card-title">Mayor gasto</div>
+        @if (biggestExpense()) {
+          <div class="card-value expense mono">{{ biggestExpenseArs() | currencyFormat: 'ARS' }}</div>
+          <div class="card-foot ellipsis" [title]="biggestExpenseLabel()">{{ biggestExpenseLabel() }}</div>
+        } @else {
+          <div class="card-value muted mono">—</div>
+          <div class="card-foot">Sin gastos en el período</div>
+        }
+      </div>
+
+      <div class="kpi-card">
+        <div class="card-title">Movimientos</div>
+        <div class="card-value mono">{{ movementCount() }}</div>
+        <div class="card-foot">{{ incomeCount() }} ingresos · {{ expenseCount() }} gastos</div>
+      </div>
+
+      <div class="kpi-card rate-card">
+        <div class="rate-ring" [style.background]="'conic-gradient(var(--accent) ' + savingsRate() + '%, var(--divider) ' + savingsRate() + '%)'">
+          <span class="rate-ring-inner mono">{{ savingsRate() }}%</span>
+        </div>
+        <div class="rate-text">
+          <div class="card-title">Tasa de ahorro</div>
+          <div class="rate-desc">De cada $100 que entraron, ahorraste ${{ savingsRate() }}.</div>
         </div>
       </div>
+    </div>
+  }
 
-      @if (monthlyBars().length > 0 && hasData()) {
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">
+          {{ isSingleMonth() ? 'Gasto acumulado del mes' : 'Ingresos vs. gastos por mes' }}
+        </span>
+        @if (isSingleMonth()) {
+          <span class="chart-sub">Total {{ totalExpense() | currencyFormat: 'ARS' }}</span>
+        } @else {
+          <div class="legend">
+            <span><span class="dot income-dot"></span>Ingresos</span>
+            <span><span class="dot expense-dot"></span>Gastos</span>
+          </div>
+        }
+      </div>
+
+      @if (loading()) {
+        <app-skeleton variant="chart" />
+      } @else if (isSingleMonth() && hasData()) {
+        <!-- viewBox 0-100 en ambos ejes + preserveAspectRatio="none": la curva se estira
+             al ancho de la card sin recalcular coordenadas al cambiar de tamaño. -->
+        <div class="curve-wrap">
+          <svg class="curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="curve-area" [attr.d]="cumulativeAreaPath()" />
+            <path class="curve-line" [attr.d]="cumulativeLinePath()" vector-effect="non-scaling-stroke" />
+          </svg>
+          <div class="curve-axis">
+            @for (t of curveTicks(); track t) {
+              <span>{{ t }}</span>
+            }
+          </div>
+        </div>
+      } @else if (monthlyBars().length > 0 && hasData()) {
         <div class="bars">
           @for (b of monthlyBars(); track b.key) {
             <div class="bar-group" [title]="b.label">
@@ -58,7 +113,7 @@
           }
         </div>
       } @else {
-        <div class="empty-state grow">{{ loading() ? 'Cargando…' : 'No hay movimientos en ' + periodLabel() + '.' }}</div>
+        <div class="empty-state grow">No hay movimientos en {{ periodLabel() }}.</div>
       }
     </div>
 
@@ -69,21 +124,94 @@
       </div>
 
       <div class="top-cats-list">
-        @for (c of topCategories(); track c.name) {
-          <div class="top-cat-item">
-            <div class="top-cat-row">
-              <span class="top-cat-name">{{ c.name }}</span>
-              <span class="mono expense">{{ c.amount | currencyFormat: 'ARS' }}</span>
+        @if (loading()) {
+          <app-skeleton variant="row" [count]="5" />
+        } @else {
+          @for (c of topCategories(); track c.name) {
+            <div class="top-cat-item">
+              <div class="top-cat-row">
+                <span class="top-cat-name">{{ c.name }}</span>
+                <span class="mono expense">{{ c.amount | currencyFormat: 'ARS' }}</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="c.pct"></div>
+              </div>
             </div>
-            <div class="bar-track">
-              <div class="bar-fill" [style.width.%]="c.pct"></div>
-            </div>
-          </div>
-        }
-        @if (!loading() && topCategories().length === 0) {
-          <div class="empty-state grow">No hay gastos en este rango.</div>
+          }
+          @if (topCategories().length === 0) {
+            <div class="empty-state grow">No hay gastos en este rango.</div>
+          }
         }
       </div>
+    </div>
+  </div>
+
+  <div class="charts-grid second-row">
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Ingresos y gastos por categoría</span>
+        <div class="legend">
+          <span><span class="dot income-dot"></span>Ingresos</span>
+          <span><span class="dot expense-dot"></span>Gastos</span>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <app-skeleton variant="row" [count]="5" />
+      } @else if (categoryFlows().length > 0) {
+        <div class="flow-list">
+          @for (f of categoryFlows(); track f.name) {
+            <div class="flow-item">
+              <span class="flow-name ellipsis" [title]="f.name">{{ f.name }}</span>
+              <div class="flow-track">
+                <div class="flow-half left">
+                  <div class="flow-bar income-bar" [style.width.%]="f.incomePct"></div>
+                </div>
+                <div class="flow-axis"></div>
+                <div class="flow-half right">
+                  <div class="flow-bar expense-bar" [style.width.%]="f.expensePct"></div>
+                </div>
+              </div>
+              <span class="flow-amounts mono">
+                @if (f.income > 0) {
+                  <span class="income">+{{ f.income | currencyFormat: 'ARS' }}</span>
+                }
+                @if (f.expense > 0) {
+                  <span class="expense">-{{ f.expense | currencyFormat: 'ARS' }}</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state grow">No hay movimientos en {{ periodLabel() }}.</div>
+      }
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <span class="chart-title">Gasto por día de semana</span>
+        @if (busiestWeekday(); as busiest) {
+          <span class="chart-sub">Tu día más caro es el {{ busiest.label }}</span>
+        }
+      </div>
+
+      @if (loading()) {
+        <app-skeleton variant="chart" />
+      } @else if (busiestWeekday()) {
+        <div class="weekday-chart">
+          @for (w of weekdaySpending(); track w.label) {
+            <div class="weekday-col" [title]="w.label + ': ' + (w.total | currencyFormat: 'ARS')">
+              <div class="weekday-bar-wrap">
+                <div class="weekday-bar" [style.height.%]="w.pct"></div>
+              </div>
+              <span class="weekday-label">{{ w.label }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state grow">No hay gastos en {{ periodLabel() }}.</div>
+      }
     </div>
   </div>
 </div>

@@ -167,7 +167,7 @@
 .portfolio-cards,
 .savings-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -177,6 +177,32 @@
   border-radius: 10px;
   background: var(--card-bg);
   padding: 18px;
+}
+
+/* El total consolidado se distingue del par ARS/USD por el borde de acento, no por
+   tamano: si fuera mas grande rompia la grilla de tres columnas. */
+.total-highlight {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--divider));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 7%, var(--card-bg)),
+    var(--card-bg) 60%
+  );
+}
+
+.line.hero {
+  margin-bottom: 2px;
+}
+
+.hero-value {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+
+  &.muted {
+    color: var(--text-muted);
+  }
 }
 
 .card-title {

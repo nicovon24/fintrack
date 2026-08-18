@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { CategoryRequest, CategoryResponse } from '../../../core/models/category.model';
 import { TransactionResponse, TransactionType } from '../../../core/models/transaction.model';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { Skeleton } from '../../../shared/components/skeleton/skeleton';
 import { TransactionsService } from '../../transactions/transactions.service';
 import { CategoriesService } from '../categories.service';
 import { CategoryEditDialog } from '../category-edit-dialog/category-edit-dialog';
@@ -17,7 +18,7 @@ interface CategoryRow extends CategoryResponse {
 // Listado de categorias. Crear/editar/borrar solo visible/permitido para ADMIN.
 @Component({
   selector: 'app-category-list',
-  imports: [FormsModule, CategoryEditDialog, ConfirmDialog],
+  imports: [FormsModule, CategoryEditDialog, ConfirmDialog, Skeleton],
   templateUrl: './category-list.html',
   styleUrl: './category-list.scss'
 })
@@ -29,6 +30,7 @@ export class CategoryList {
   private readonly categories = signal<CategoryResponse[]>([]);
   private readonly transactions = signal<TransactionResponse[]>([]);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
 
   protected readonly categoriesEnriched = computed<CategoryRow[]>(() =>
     this.categories().map((cat) => ({
@@ -50,13 +52,25 @@ export class CategoryList {
     this.reload();
   }
 
-  private reload(): void {
+  protected reload(): void {
     this.loading.set(true);
-    this.categoriesService.findAll().subscribe((categories) => {
-      this.categories.set(categories);
-      this.loading.set(false);
+    this.loadError.set(false);
+    this.categoriesService.findAll().subscribe({
+      next: (categories) => {
+        this.categories.set(categories);
+        this.loading.set(false);
+      },
+      // Sin esta rama el skeleton quedaba girando para siempre ante un error de red.
+      error: () => {
+        this.categories.set([]);
+        this.loadError.set(true);
+        this.loading.set(false);
+      }
     });
-    this.transactionsService.findAll().subscribe((transactions) => this.transactions.set(transactions));
+    this.transactionsService.findAll().subscribe({
+      next: (transactions) => this.transactions.set(transactions),
+      error: () => this.transactions.set([])
+    });
   }
 
   startEdit(id: number): void {

@@ -1,6 +1,7 @@
 :host {
   display: flex;
   width: 100%;
+  min-height: 100%;
 }
 
 .page {
@@ -43,9 +44,11 @@
   text-align: right;
 }
 
+/* Seis KPIs en una fila: el minmax bajo los mantiene chicos y deja que envuelvan
+   de a tres en pantallas medianas, en vez de estirarse hasta verse enormes. */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
   gap: 10px;
 }
 
@@ -67,21 +70,39 @@
 }
 
 .card-value {
-  font-size: 16.5px;
+  font-size: 15.5px;
   font-weight: 700;
   letter-spacing: -0.3px;
+
+  &.muted {
+    color: var(--text-muted);
+  }
+}
+
+/* Linea de contexto: convierte cada numero suelto en un dato interpretable. */
+.card-foot {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* El anillo reemplaza al gauge grande que repetia el mismo numero en otra card. */
 .rate-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .rate-ring {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -90,8 +111,8 @@
 }
 
 .rate-ring-inner {
-  width: 29px;
-  height: 29px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--card-bg);
   display: flex;
@@ -112,11 +133,23 @@
   line-height: 1.35;
 }
 
+/* Las dos filas se reparten el alto sobrante en partes iguales. El `flex-basis: 0` con
+   shrink habilitado es lo que impide que un grafico alto estire la fila: con `flex: 1 0 auto`
+   la base es el contenido y la card crece sin tope (la curva empujaba la pagina). */
 .charts-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 1.15fr 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
+  flex: 1 1 0;
+  min-height: 260px;
+}
+
+/* Segunda fila: el divergente necesita el ancho, el de dias de semana con 7 barras
+   se banca la columna angosta. */
+.second-row {
+  grid-template-columns: 1.5fr 1fr;
 }
 
 .chart-card {
@@ -153,7 +186,8 @@
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  height: 100px;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .bar-group {
@@ -219,21 +253,32 @@
   background: var(--expense);
 }
 
+/* space-between reparte los items en todo el alto de la card: antes se apretaban
+   arriba y dejaban un hueco muerto abajo. */
 .top-cats-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  flex: 1;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 1 1 0;
   min-height: 0;
   overflow: hidden auto;
+}
+
+.top-cat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .top-cat-row {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  font-size: 12px;
-  margin-bottom: 4px;
+  font-size: 14px;
+  margin-bottom: 7px;
 }
 
 .top-cat-name {
@@ -243,8 +288,8 @@
 }
 
 .bar-track {
-  height: 6px;
-  border-radius: 3px;
+  height: 9px;
+  border-radius: 5px;
   background: var(--divider);
   overflow: hidden;
 }
@@ -252,7 +297,161 @@
 .bar-fill {
   height: 100%;
   background: var(--expense);
-  border-radius: 3px;
+  border-radius: 5px;
+}
+
+/* --- Curva de gasto acumulado (periodo = un mes) --- */
+
+.curve-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.curve {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+.curve-area {
+  fill: var(--expense);
+  opacity: 0.14;
+}
+
+/* non-scaling-stroke en el template evita que el estirado horizontal del viewBox
+   deforme el grosor de la linea. */
+.curve-line {
+  fill: none;
+  stroke: var(--expense);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.curve-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* --- Ingresos y gastos por categoria (barras divergentes) --- */
+
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden auto;
+}
+
+.flow-item {
+  display: grid;
+  grid-template-columns: 104px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+}
+
+.flow-name {
+  color: var(--text-secondary);
+}
+
+.flow-track {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Las dos mitades comparten ancho: el eje central queda fijo aunque un lado este vacio. */
+.flow-half {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  height: 13px;
+
+  &.left {
+    justify-content: flex-end;
+  }
+  &.right {
+    justify-content: flex-start;
+  }
+}
+
+.flow-axis {
+  width: 1px;
+  height: 15px;
+  background: var(--divider);
+  flex-shrink: 0;
+}
+
+.flow-bar {
+  height: 100%;
+  border-radius: 2px;
+
+  &.income-bar {
+    background: var(--income);
+    border-radius: 2px 0 0 2px;
+  }
+  &.expense-bar {
+    background: var(--expense);
+    border-radius: 0 2px 2px 0;
+  }
+}
+
+.flow-amounts {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* --- Gasto por dia de semana --- */
+
+.weekday-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.weekday-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.weekday-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.weekday-bar {
+  width: 100%;
+  max-width: 26px;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--expense);
+}
+
+.weekday-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
 }
 
 .empty-state {
@@ -270,7 +469,18 @@
 
 /* Mismo corte que el sidebar mobile (app-shell.scss). */
 @media (max-width: 860px) {
-  .charts-grid {
+  .charts-grid,
+  .second-row {
     grid-template-columns: 1fr;
+  }
+
+  /* Los montos pasan abajo: en una columna no entran nombre + barra + cifras. */
+  .flow-item {
+    grid-template-columns: 76px 1fr;
+    row-gap: 3px;
+  }
+
+  .flow-amounts {
+    grid-column: 2;
   }
 }

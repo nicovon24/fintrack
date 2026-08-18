@@ -8,6 +8,7 @@ import { Currency } from '../../core/models/transaction.model';
 import { DolarBlueService } from '../../core/services/dolar-blue.service';
 import { IolService } from '../../core/services/iol.service';
 import { DonutChart, DonutSlice } from '../../shared/components/donut-chart/donut-chart';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { Saving, SavingKind } from './investments.model';
 
@@ -53,7 +54,7 @@ function loadSavings(): Saving[] {
 // Portfolio: tenencias reales de IOL, en vivo, sin persistir nada (ver docs/specs/07).
 @Component({
   selector: 'app-investments',
-  imports: [FormsModule, CurrencyFormatPipe, DecimalPipe, DonutChart],
+  imports: [FormsModule, CurrencyFormatPipe, DecimalPipe, DonutChart, Skeleton],
   templateUrl: './investments.html',
   styleUrl: './investments.scss'
 })

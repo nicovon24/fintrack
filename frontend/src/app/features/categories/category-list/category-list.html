@@ -1,5 +1,14 @@
 <div class="categories-page">
   <div class="list-panel">
+    @if (loadError()) {
+      <div class="load-error">
+        <span>No se pudieron cargar las categorías.</span>
+        <button type="button" class="btn-retry" (click)="reload()">Reintentar</button>
+      </div>
+    }
+    @if (loading()) {
+      <app-skeleton variant="row" [count]="8" />
+    }
     @for (cat of categoriesEnriched(); track cat.id) {
       <div class="cat-row">
         @if (editingId() !== cat.id) {

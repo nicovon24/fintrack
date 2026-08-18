@@ -2,7 +2,7 @@
 
 ## Engine
 
-- PostgreSQL. Connection: `jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:55432}/${DB_NAME:gastosdb}` (`backend/src/main/resources/application.yaml`).
+- PostgreSQL. Connection: `jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:51842}/${DB_NAME:gastosdb}` (`backend/src/main/resources/application.yaml`).
 - Schema managed by Hibernate auto-DDL (`spring.jpa.hibernate.ddl-auto: update`) — **no migration files** (no Flyway/Liquibase). Schema is derived directly from JPA entities below; adding/renaming a field in the entity changes the DB on next boot.
 - Single database, single schema (`public`), no multi-tenancy.
 
